@@ -1,0 +1,33 @@
+import pandas as pd
+from ddbapi import zp_pages
+
+places = orte = [
+    "Stuttgart", "Köln", "Hamburg", "Bonn", "Bad Godesberg", "Kleve (Kreis Kleve)", "Jülich", "Dortmund",
+    "Siegburg", "Euskirchen", "Halle (Saale)", "Münster (Westf)", "Berlin", "Duisburg", "Bielefeld",
+    "Stuttgart-Untertürkheim", "Untertürkheim", "Feuerbach (Stuttgart)", "Stuttgart-Feuerbach", "Stuttgart-Zuffenhausen",
+    "Zuffenhausen", "Botnang", "Degerloch", "Münster (Stuttgart)", "Obertürkheim", "Stuttgart-Botnang",
+    "Stuttgart-Degerloch", "Stuttgart-Münster", "Stuttgart-Obertürkheim", "Aachen", "Ruhrort", "Bonn-Bad Godesberg",
+    "Karlsruhe", "Solingen", "Moers", "Meiderich", "Regierungsbezirk Aachen", "Düren", "Mannheim", "Beckum",
+    "Mülheim an der Ruhr", "Gütersloh", "München-Gladbach", "Warendorf", "Ahlen (Kreis Warendorf)", "Dinslaken",
+    "Mönchengladbach", "Gladbach-Rheydt", "Ohligs", "Oelde", "Wiedenbrück", "Dresden", "Iserlohn", "Hamborn",
+    "Oberhausen (Rheinland)", "Wesel", "Düsseldorf", "Biberach an der Riß", "Merseburg", "Kreis Solingen",
+    "Gräfrath", "Duisburg-Hamborn", "Bad Buchau", "Hagen", "Hamburg-Harburg", "Harburg (Elbe)",
+    "Harburg-Wilhelmsburg", "Arnsberg", "Haan", "Riedlingen", "Wülfrath", "Witten", "Krefeld", "Velbert",
+    "Velbert-Langenberg", "Mettmann", "Hamm (Westf)", "Soest", "Werl", "Hannover", "Geldern", "Bergheim (Erft)",
+    "Bergedorf", "Castrop-Rauxel", "Geesthacht", "Hamburg-Bergedorf", "Hamburg-Lohbrügge", "Stormarn", "Leipzig",
+    "Bensberg", "Bergisch Gladbach", "Bergisch Gladbach-Bensberg", "Schwarzenberg/Erzgeb.", "Dorsten",
+    "Ochsenhausen", "Heiligenhaus", "Neviges", "Landkreis Kempen-Krefeld", "New York, NY", "Heidelberg"
+]
+
+for place in places:
+    df = zp_pages(
+        publication_date='[1850-01-01T12:00:00Z TO 1980-12-31T12:00:00Z]', 
+        place_of_distribution=place, 
+        plainpagefulltext=["Heiratsgesuch"]
+        )
+    df.to_csv("data/" + place.replace(" ", "_") +'_newspaper.csv', sep=';', index=False)
+    
+
+
+
+
