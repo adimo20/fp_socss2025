@@ -5,7 +5,7 @@
 - [extract_data_from_fulltext](#extract_data_from_fulltext)
 
 # deutsches_zeitungs_portal
-Das deutsche Zeitungsportal bieten auf seiner <a href = "https://github.com/Deutsche-Digitale-Bibliothek/ddblabs-ddbapi">Internetseite<a> die Möglichkeit eine sehr große Anzahl von historischen Zeitungen zu betrachten. Dabei lässt sich auch eine Schlagwortsuche durchführen. Diese Suche ergibt auf ungefähr 21000 Zeitungsseiten ein Match. 
+Das deutsche Zeitungsportal bietet auf seiner <a href = "https://github.com/Deutsche-Digitale-Bibliothek/ddblabs-ddbapi">Internetseite<a> die Möglichkeit eine sehr große Anzahl von historischen Zeitungen zu betrachten. Dabei lässt sich auch eine Schlagwortsuche durchführen. Sucht man nach dem Begriff Heiratsgesuch findet man auf ungefähr 21000 Zeitungsseiten ein Match. 
 <p>
 <br>
 <img width="829" alt="image" src="https://github.com/user-attachments/assets/4fb7c476-bde7-4c8f-a606-92fa6d48f6a5" />
