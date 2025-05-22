@@ -33,3 +33,8 @@ Da wir eine Art Rate-Limit-Fehler bekommen, wenn wir keinen Ort bei der API-Abfr
 # extract_data_from_fulltext
 Nachdem die Daten über die API importiert worden sind müssen wir sie jetzt für uns nutzbar machen. Die Texte die wir erhalten haben sind die Volltexte, der Seiten in denen ein Match mit dem Suchwort "Heiratsgesuch" gefunden wurde. Um nun die konkreten Kontaktanzeigen aus diesen Volltexten zu entnehmen verwenden wir die GeminiAPI. An diese senden wir den Volltext und geben explizite Anweisungen wie und welchen Text sie aus dem Volltext extrahieren soll. So erhalten nur die relevanten Stellen aus dem Dokument. 
 
+# Sample
+
+![image](https://github.com/user-attachments/assets/5490c3b3-43ee-450d-9a4f-29a5d12b421c)
+
+
