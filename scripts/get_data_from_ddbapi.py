@@ -1,5 +1,6 @@
 import pandas as pd
 from ddbapi import zp_pages
+import os
 
 places = orte = [
     "Stuttgart", "Köln", "Hamburg", "Bonn", "Bad Godesberg", "Kleve (Kreis Kleve)", "Jülich", "Dortmund",
@@ -28,6 +29,17 @@ for place in places:
     df.to_csv("data/" + place.replace(" ", "_") +'_newspaper.csv', sep=';', index=False)
     
 
+#now reload the dfs to concat them 
+paths_to_dfs = ["data/" + x for x in os.listdir("data")]
+df_list = []
+for paths_to_df in paths_to_dfs:
+    df_list.append(pd.read_csv(paths_to_df, sep=";"))
 
+df_full = pd.concat(df_list)
+
+msk = df_full.duplicated()
+df_filtered = df_full[msk == False]
+
+df_filtered.to_csv("newspaper_concat.csv", sep=";")
 
 
