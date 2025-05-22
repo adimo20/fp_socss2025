@@ -19,7 +19,10 @@ places = orte = [
     "Bensberg", "Bergisch Gladbach", "Bergisch Gladbach-Bensberg", "Schwarzenberg/Erzgeb.", "Dorsten",
     "Ochsenhausen", "Heiligenhaus", "Neviges", "Landkreis Kempen-Krefeld", "New York, NY", "Heidelberg"
 ]
-
+outdir = "data"
+if not os.path.isdir(outdir):
+    os.mkdir(outdir)
+#Save all the datasets individually - so we have a checkpoint for the org. data
 for place in places:
     df = zp_pages(
         publication_date='[1850-01-01T12:00:00Z TO 1980-12-31T12:00:00Z]', 
