@@ -5,3 +5,11 @@ configs = {
   "in this case extract all of them. If you are done, reevaluate your work and check your results. Revavluate if the extracted text is really a marriage request and not some sort of other requst. Return the results in the format of a python list." \
   "The response should be just the text you extracted. It just should contain a list of the extracted texts, with no changes made to the text."
 }
+
+generation_config = {
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 40,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+}
