@@ -21,9 +21,7 @@ class information_extractor:
         self.page_ids:list = None
         self.input_texts:list = None
         self.df = None
-        self.string_for_ocr_correction = None
-        self.prompt_for_ocr_correction = configs["prompt_ocr_correction"]
-
+        
     def set_config(self):
         """Setzen des API Keys, aus dem config_file"""
         API_KEY = configs["API_KEY"]
@@ -34,6 +32,7 @@ class information_extractor:
         self.model = genai.GenerativeModel(
             model_name=self.model_name,
             generation_config=generation_config)
+        self.initialized_model = True
         
     def load_data(self):
         """Einlesen der Daten aus dem Input-Path und speichern in den Variablen input_texts, page_id"""
@@ -111,6 +110,54 @@ class information_extractor:
             if i == 500:
                 break
     
+    def information_extraction_flow(self):
+        """Workflow für die Informationsextraction!"""
+        flow = [self.set_config, self.load_model, self.load_data, self.check_output_path, self.extract_informations]
+
+        for f in flow:
+            f()
+            print(f"{f} is done!", flush=True)
+    
+#######################################################################
+
+class OcrCorrecter:
+    def __init__(self, model_name:str, df, page_id_colname:str, text_colname:str):
+        self.model_name:str = model_name
+        self.prompt:str = configs["PROMPT"]
+        self.model:str = None
+        self.df = df
+        self.string_for_ocr_correction = None
+        self.prompt_for_ocr_correction = configs["prompt_ocr_correction"]
+        self.initialized_model = False
+        self.lower_boundary = None
+        self.upper_boundary = None
+        self.page_id_colname =page_id_colname
+        self.text_colname = text_colname
+    
+    def set_config(self):
+        """Setzen des API Keys, aus dem config_file"""
+        API_KEY = configs["API_KEY"]
+        genai.configure(api_key=API_KEY)
+
+    def load_model(self):
+        """Laden des Models und setzen der Modelkonfigurationen"""
+        self.model = genai.GenerativeModel(
+            model_name=self.model_name,
+            generation_config=generation_config)
+        self.initialized_model = True
+
+    def create_batch_boundries(self):
+        batch_size = 25
+        lower_boundary = [i for i in range(0,len(self.df)) if i % batch_size == 0]
+        self.upper_boundary = [i for i in range(0,len(self.df)) if i % batch_size == 0][1:]
+        self.lower_boundary = lower_boundary[:len(lower_boundary)-1]
+
+    def create_json_str(self, df, lower, upper):    
+        j_list = [{ p : t} for p, t in zip(df[self.page_id_colname], df[self.text_colname])]
+        test_list = j_list[lower:upper]
+        test_list_str = json.dumps(test_list)
+        return test_list_str
+        
     def correct_ocr(self):
         response = self.model.generate_content([self.prompt_for_ocr_correction, self.string_for_ocr_correction])
         patterns_to_remove = ["```json", "```", "\n"]
@@ -139,14 +186,6 @@ class information_extractor:
 
         corrected_df = pd.DataFrame(data={"page_id" : page_ids, "texts": texts})
         return corrected_df     
-
-    def information_extraction_flow(self):
-        """Workflow für die Informationsextraction!"""
-        flow = [self.set_config, self.load_model, self.load_data, self.check_output_path, self.extract_informations]
-
-        for f in flow:
-            f()
-            print(f"{f} is done!", flush=True)
     
     def ocr_correction_flow(self):
         """Workflow für die Ocr-Correction!"""
@@ -154,13 +193,33 @@ class information_extractor:
 
         for i, f in enumerate(flow):
             print(f"{f} is done!", flush=True)
-            if i != 3:
+            
+            if self.initialized_model and i < 2: continue 
+
+            if i < 3:
                 f()
             else:
                 result = f()
                 print(f"{f} is done!", flush=True)
                 return result
-            
+    
+    def run_batched_correction_flow(self):
+        self.create_batch_boundries()
+        res_list = []   
+        for l, u in zip(self.lower_boundary, self.upper_boundary):
+            j_string = self.create_json_str(self.df, l, u)
+            self.string_for_ocr_correction = j_string
+            resp = self.ocr_correction_flow()
+            res_list.append(resp)
+            if u % 200 == 0:
+                res_df = pd.concat(res_list)
+                res_df.to_csv("corrected_df.csv", sep=";")
+
+
+
+
+        
+    
 
 
 
@@ -168,9 +227,6 @@ if __name__ == "__main__":
     extractor = information_extractor(input_path="newspaper_concat.csv", output_path="page_id_plus_texts.csv", model_name="gemini-1.5-flash")
     extractor.information_extraction_flow()
     
-
-
-
 
 
 
