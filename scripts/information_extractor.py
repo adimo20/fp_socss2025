@@ -6,7 +6,8 @@ from time import sleep
 import ast
 import os
 from config_file import configs, generation_config
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+import json
+#sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 
 
@@ -20,6 +21,8 @@ class information_extractor:
         self.page_ids:list = None
         self.input_texts:list = None
         self.df = None
+        self.string_for_ocr_correction = None
+        self.prompt_for_ocr_correction = configs["prompt_ocr_correction"]
 
     def set_config(self):
         """Setzen des API Keys, aus dem config_file"""
@@ -84,7 +87,7 @@ class information_extractor:
                 print("Failed to parse:", e)
             
             try:
-                if response is not None or response == []:
+                if response is not None or response != []:
                     if len(response) > 1 and isinstance(response, list):
                         for r in response:
                             results.append((page_id, r))
@@ -107,6 +110,35 @@ class information_extractor:
             
             if i == 500:
                 break
+    
+    def correct_ocr(self):
+        response = self.model.generate_content([self.prompt_for_ocr_correction, self.string_for_ocr_correction])
+        patterns_to_remove = ["```json", "```", "\n"]
+        response_text = response.text
+        for p in patterns_to_remove:
+            response_text = response_text.replace(p, "")
+
+        self.ocr_corrected_json = response_text
+    
+    def json_to_df(self):
+        
+        def get_value_key(r):
+            value = r.values()
+            string = list(value)[0]
+            key_dict = r.keys()
+            key = list(key_dict)[0]
+            return key, string
+
+        resp = self.ocr_corrected_json
+        page_ids, texts = [], []
+        json_list = json.loads(resp)
+        for r in json_list:
+            key, string = get_value_key(r)
+            page_ids.append(key)
+            texts.append(string)
+
+        corrected_df = pd.DataFrame(data={"page_id" : page_ids, "texts": texts})
+        return corrected_df     
 
     def information_extraction_flow(self):
         """Workflow für die Informationsextraction!"""
@@ -115,12 +147,30 @@ class information_extractor:
         for f in flow:
             f()
             print(f"{f} is done!", flush=True)
+    
+    def ocr_correction_flow(self):
+        """Workflow für die Ocr-Correction!"""
+        flow = [self.set_config, self.load_model, self.correct_ocr, self.json_to_df]
+
+        for i, f in enumerate(flow):
+            print(f"{f} is done!", flush=True)
+            if i != 3:
+                f()
+            else:
+                result = f()
+                print(f"{f} is done!", flush=True)
+                return result
+            
 
 
 
 if __name__ == "__main__":
     extractor = information_extractor(input_path="newspaper_concat.csv", output_path="page_id_plus_texts.csv", model_name="gemini-1.5-flash")
     extractor.information_extraction_flow()
+    
+
+
+
 
 
 
