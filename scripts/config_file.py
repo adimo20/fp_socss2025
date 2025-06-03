@@ -1,3 +1,5 @@
+from scripts.schemes import ExtractedContent
+
 configs = {
   "API_KEY" : "API-Key hier in diesen String schreiben",
   "PROMPT":"Your porpouse is it to extract a pre-defined part of the text i will provide you. The text i'll provide you is an ocr read" \
@@ -12,8 +14,9 @@ configs = {
   "for a given information return None. Answer one in german in case you want to cite something - cite the original text.",
   "prompt_ocr_correction":"You are an OCR expert. You are perfect at fixing errors which happen when digitising text. you will be provided a json string."
   "It contains a list of keys with the corresponding texts. Return me the list in the same json format with the same keys, but correct the ocr-errors that occur in the"
-  "test. Here is the json string",
-  "batch_size":25
+  "text. Just return me the texts in the format it told you. I dont want any further information. Here is the json string",
+  "batch_size":1,
+  "model_name":"gemini-1.5-flash",
 
 }
 
@@ -22,5 +25,7 @@ generation_config = {
     "top_p": 0.95,
     "top_k": 40,
     "max_output_tokens": 8192,
-    "response_mime_type": "text/plain",
-} 
+    "response_mime_type": "application/json",
+    "response_schema": ExtractedContent,
+
+}
