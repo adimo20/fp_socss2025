@@ -148,10 +148,14 @@ class OcrCorrecter:
 
     def create_batch_boundries(self) -> None:
         batch_size = configs["batch_size"]
-        lower_boundary = [i for i in range(0,len(self.df)) if i % batch_size == 0]
-        self.upper_boundary = [i for i in range(0,len(self.df)) if i % batch_size == 0][1:]
-        self.lower_boundary = lower_boundary[:len(lower_boundary)-1]
-
+        num_cases = len(self.df)
+        lower_boundary = [i for i in range(0,num_cases) if i % batch_size == 0]
+        upper_boundary = [i for i in range(0,num_cases) if i % batch_size == 0][1:]
+        upper_boundary[len(upper_boundary)-1] = num_cases-1
+        self.upper_boundary = upper_boundary
+        lower_boundary = lower_boundary[:len(lower_boundary)-1]
+        self.lower_boundary = lower_boundary
+        
     def create_json_str(self, df, lower, upper) -> str:
         """Creates a json format string containing the keys - page_id and values text - the ocr-error
         texts. It is as big as the batch size"""    
@@ -237,3 +241,7 @@ if __name__ == "__main__":
 
 
 
+
+
+
+    
