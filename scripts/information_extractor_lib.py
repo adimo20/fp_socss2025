@@ -1,26 +1,24 @@
 import pandas as pd
 import google.generativeai as genai
-import sys
-import io
 from time import sleep
-import ast
 import os
-from config_file import configs, generation_config
+from scripts.config_file import configs, generation_config
 import json
-#sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 
 
-class information_extractor:
-    def __init__(self, input_path: str, output_path:str, model_name:str):
-        self.input_path:str = input_path
-        self.output_path:str = output_path
-        self.model_name:str = model_name
+class InformationExtractor:
+    def __init__(self, df:pd.DataFrame,page_id_colname:str, text_colname:str, output_filename:str):
+        self.model_name:str = configs["model_name"]
         self.prompt:str = configs["PROMPT"]
         self.model:str = None
         self.page_ids:list = None
         self.input_texts:list = None
-        self.df = None
+        self.df = df
+        self.model_input = None
+        self.page_id_colname = page_id_colname
+        self.text_colname = text_colname
+        self.output_filename = output_filename
         
     def set_config(self):
         """Setzen des API Keys, aus dem config_file"""
@@ -36,89 +34,73 @@ class information_extractor:
         
     def load_data(self):
         """Einlesen der Daten aus dem Input-Path und speichern in den Variablen input_texts, page_id"""
-        self.df = pd.read_csv(self.input_path, sep=";")
-        self.input_texts = self.df["plainpagefulltext"]
-        self.page_ids = self.df["page_id"]
+        self.input_texts = self.df[self.text_colname]
+        self.page_ids = self.df[self.page_id_colname]
 
-    def check_output_path(self):
-        if not os.path.isfile(self.output_path):
-            results_df = pd.DataFrame(data={"page_id_plus_texts":[""]})
-            results_df.to_csv(self.output_path)
-        return
-            
-
-    def append_existing_df(self, results):
-        """Speichern der neu extrahierten Informationen in den dataframe hinterlegt in output_path."""
-        
-        if len(results) > 0:
-            exististing_df = pd.read_csv(self.output_path, sep=";")  
-            results_df = pd.DataFrame(data={"page_id_plus_texts":results})
-            results_df = pd.concat([exististing_df, results_df])
-            results_df = results_df[results_df.duplicated() == False]
-            results_df.to_csv(self.output_path, sep=";", index=False)
-        else: 
-            return
-
-    def reduce_input_for_next_run(self, page_ids):
-        """Entfernen der bereits verarbeiteten Seiten aus dem Input dataframe und abspeichern des reduzierten Dataframe"""
-        self.df = self.df[self.df.page_id.apply(lambda s: s not in page_ids)]
-        self.df.to_csv(self.input_path, sep=";")
-
-    def extract_informations(self):
-        """Funktion die die Informationen im gegebenen Text durch die gemini API kondensiert."""
-
-        results = []
-        processed_ids = []
-        for page_id, input_text, i in zip(self.page_ids, self.input_texts, range(len(self.input_texts))):
-            
-            print(f"Reached {i}-th text.", flush=True)
-            processed_ids.append(page_id)
-            response = self.model.generate_content([self.prompt, input_text])
-            print(response, flush=True)
-            patterns_to_remove = ["```python", "```", "\n"]
-            response = response.text
-            for p in patterns_to_remove:
-                response = response.replace(p, "")
-            
-            try:
-                response = ast.literal_eval(response)
-            except Exception as e:
-                print("Failed to parse:", e)
-            
-            try:
-                if response is not None or response != []:
-                    if len(response) > 1 and isinstance(response, list):
-                        for r in response:
-                            results.append((page_id, r))
-                    elif len(response) == 1 and isinstance(response, list):
-                        results.append((page_id,response[0]))
-
-                    
-
-            except:
-                print("Error while appending the output-list!")
-            print(f"extract this: {response}", flush=True)
-            sleep(6)
-            del(response)
-
-            if i % 20 == 0:
-                #Hier könnte man noch einen Feedback loop einbauen!
-                print("Saved the results!!!", flush=True)
-                self.append_existing_df(results=results)
-                self.reduce_input_for_next_run(page_ids=processed_ids)
-            
-            if i == 500:
-                break
-    
-    def information_extraction_flow(self):
-        """Workflow für die Informationsextraction!"""
-        flow = [self.set_config, self.load_model, self.load_data, self.check_output_path, self.extract_informations]
-
+    def loading_flow(self):
+        flow = [self.set_config, self.load_model, self.load_data]
         for f in flow:
             f()
-            print(f"{f} is done!", flush=True)
+            print(f"{f} is done!")
+
+    def create_model_input(self,page_id, input_text):
+        self.model_input = {page_id:input_text}
+        input_combined = f"{self.prompt}\n{self.model_input}"
+        return input_combined
+          
+
+    def extract_single_page(self, page_id, input_text):
+        input_combined = self.create_model_input(page_id=page_id, input_text=input_text)
+        response = self.model.generate_content([input_combined])
+        res_parsed = json.loads(response.text)
+        print(res_parsed)
+        return res_parsed
     
-#######################################################################
+    def create_out_df(self, r:list):
+        if os.path.isfile(self.output_filename):
+            existing_df = pd.read_csv(self.output_filename, sep=";")
+            new_df = pd.DataFrame(data={"page_id":[c["page_id"] for c in r], "text":[c["content"] for c in r]})
+            combined_df = pd.concat([existing_df, new_df])
+            
+            return combined_df
+        
+        else: 
+            new_df = pd.DataFrame(data={"page_id":[c["page_id"] for c in r], "text":[c["content"] for c in r]})
+            return new_df
+    
+    def check_model_output(self, model_output, i):
+        if "page_id" in model_output and "content" in model_output:
+            return model_output
+        elif "page_id" not in model_output:
+            model_output.update({"page_id":self.page_ids[i]})
+            return model_output
+        else: 
+            model_output.update({"content":"Nothing found in here"})
+            return model_output
+            
+
+
+    def extract_data_loop(self, max_n):
+        self.loading_flow()
+        res_list = []
+        for i in range(0, max_n):
+            res_temp = self.extract_single_page(self.page_ids[i], self.input_texts[i])
+            res_temp = self.check_model_output(model_output=res_temp, i=i)
+            res_list.append(res_temp)
+            sleep(6)
+            if i % 5 == 0:
+                res_list_df_temp = self.create_out_df(res_list)
+                res_list_df_temp.to_csv(self.output_filename, sep=";", index=False)
+        
+            
+        res_list_df = self.create_out_df(res_list)
+        return(res_list_df)
+        
+
+
+###########################################
+###########################################
+
 
 class OcrCorrecter:
     def __init__(self, model_name:str, df, page_id_colname:str, text_colname:str):
@@ -226,20 +208,6 @@ class OcrCorrecter:
             if u % 200 == 0:
                 res_df = pd.concat(res_list)
                 res_df.to_csv("corrected_df.csv", sep=";")
-
-
-if __name__ == "__main__":
-    extractor = information_extractor(input_path="newspaper_concat.csv", output_path="page_id_plus_texts.csv", model_name="gemini-1.5-flash")
-    extractor.information_extraction_flow()
-
-    df = pd.read_csv("page_id_plus_texts.csv", converters={"page_id_plus_texts":ast.literal_eval}, sep = ";")
-    df["page_id"], df["text"] = df.page_id_plus_texts.apply(lambda l: str(l[0])), df.page_id_plus_texts.apply(lambda l: l[1])
-    ocr_cor = OcrCorrecter(model_name="gemini-1.5-flash", df=df, page_id_colname="page_id", text_colname="text")
-    ocr_cor.run_batched_correction_flow()
-
-    
-
-
 
 
 
