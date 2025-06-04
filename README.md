@@ -45,8 +45,7 @@ Das aktuelle Skript `information_extractor_lib` implementiert die Klasse `Inform
 - `df` - pandas dataframe der die von der ddbapi entnommenen daten enthält
 - `page_id_colname` - Spaltename im Dataframe in dem die Page-Ids enthalten sind
 - `text_colname` - Spaltenname im Dataframe in dem die Volltexte gespeichert sind.
-- `output_path` - Pfad an dem die Ergebnisse der Informationsextraktion gespeichert werden sollen. Im Falle, dass bereits einmal Ergebnisse zwischengespeichert wurden von dieser Klasse - muss kein neuer Pfad angegeben werden. Die Klasse konkatiniert die alten Ergebnisse mit den neuen Ergebnissen (Sofern diese dien gleichen Spaltennamen haben).
-- `model_name` - Gibt den Namen des Gimini-Models an, welches über die API angesprochen werden soll um die Informationen aus den Dokumenten zu entnehmen.
+- `output_path` - Pfad an dem die Ergebnisse der Informationsextraktion gespeichert werden sollen. Im Falle, dass bereits einmal Ergebnisse zwischengespeichert wurden von dieser Klasse - muss kein neuer Pfad angegeben werden. Die Klasse konkatiniert die alten Ergebnisse mit den neuen Ergebnissen (Sofern diese die gleichen Spaltennamen haben).
 
 Um nun den Task der Informationsextraction zu performen werden 5 verschiedene Funktionen der Klasse `information_extractor` durchlaufen:
 1. `set_config` - setzt den API Key.
