@@ -32,29 +32,38 @@ Da wir eine Art Rate-Limit-Fehler bekommen, wenn wir keinen Ort bei der API-Abfr
 
 # information_extractor
 Nachdem die Daten über die API importiert worden sind müssen wir sie jetzt für uns nutzbar machen. Die Texte die wir erhalten haben sind die Volltexte, der Seiten in denen ein Match mit dem Suchwort "Heiratsgesuch" gefunden wurde. Um nun die konkreten Kontaktanzeigen aus diesen Volltexten zu entnehmen verwenden wir die GeminiAPI. An diese senden wir den Volltext und geben explizite Anweisungen wie und welchen Text sie aus dem Volltext extrahieren soll. So erhalten nur die relevanten Stellen aus dem Dokument. 
-Das aktuelle Skript `information_extractor` implementiert die Klasse `information_extractor`. Diese Klasse bekommt as Input drei Werte:
-- `input_path` - Pfad zum Datensatz der von der ddbapi gezogen wurde.
+Das aktuelle Skript `information_extractor_lib` implementiert die Klasse `InformationExtractor`. Diese Klasse bekommt as Input drei Werte:
+- `df` - pandas dataframe der die von der ddbapi entnommenen daten enthält
+- `page_id_colname` - Spaltename im Dataframe in dem die Page-Ids enthalten sind
+- `text_colname` - Spaltenname im Dataframe in dem die Volltexte gespeichert sind.
 - `output_path` - Pfad an dem die Ergebnisse der Informationsextraktion gespeichert werden sollen. Im Falle, dass bereits einmal Ergebnisse zwischengespeichert wurden von dieser Klasse - muss kein neuer Pfad angegeben werden. Die Klasse konkatiniert die alten Ergebnisse mit den neuen Ergebnissen (Sofern diese dien gleichen Spaltennamen haben).
 - `model_name` - Gibt den Namen des Gimini-Models an, welches über die API angesprochen werden soll um die Informationen aus den Dokumenten zu entnehmen.
 
 Um nun den Task der Informationsextraction zu performen werden 5 verschiedene Funktionen der Klasse `information_extractor` durchlaufen:
 1. `set_config` - setzt den API Key.
 2. `load_model` - intialisiert das Model als als Attribut der Klasse. Dabei werden die Model Konfigurationen aus dem config_file geladen.
-3. `load_data` - lädt den Dataframe, der unter dem `input_path` abgelegt ist und speichert diesen als Attribut der Klasse ab.
-4. `check_output_path` - checkt ob unter dem `output_path` ein File abliegt, wenn nicht wird ein Dataframe im gewünschten Format initialisiert und dort abgelegt.
-5. `extract_information` - Kommuniziert mit der API - Es werden iterativ die Volltexte die im Input-dataframe abliegen zusammen mit dem Prompt an die API geschickt. Danach wird die Antwort der API so restrukturiert, dass wir sie weiterverarbeiten können. Die umformatierte Antwort wird dann in Form von Tuplen (page_id, text) in einer Liste abgepeichert, sodass wir diese später in wieder in einem csv-Format unter `output_path` abspeichern können. Die Ergebnisse werden alle 20 Iterationen abgespeichert, sodass wenn es zu unvorhergesehenen Fehlern kommt kein zu großer Datenverlust vorliegt.
-6. `information_extraction_flow` Die Funktion information_extraction_flow performt diesen Prozess.
+3. `load_data` - speichert die input texte und die page ids in zwei elementen des init `page_ids` und `input_texts`
+4. `loading_flow` - flow der das API-Model lädt und im init unter `model` speichert
+5. `create_model_input` - erstellt den Model-Input durch das kombinieren des Prompt der Page Id und des Texts.
+6. `check_model_output` - überprüft ob alle nötigen Informationen in geeigneter Form, in der Response enthalten sind. Wenn ja gibt es die Response zurück wenn nicht werden die fehlenden Angaben imputiert, heißt, es wird entweder die page_id ergänzt oder der Text wird als "Not found" geflagt.
+7. `extract_single_page` - Kommuniziert mit der API - und extrahiert die im prompt angebenene Information aus dem unstrukturierten Volltext.
+8. `create_out_df` - erzeugt einen pandas Dataframe der später unter dem Output path abgelegt wird. 
+9. `extract_data_loop` - Es werden iterativ die Volltexte die im Input-dataframe abliegen zusammen mit dem Prompt an die API geschickt.
+10. `information_extraction_flow` Die Funktion information_extraction_flow performt diesen Prozess.
 
 ## Anwendung der Klasse
 Wenn der config_file im richtigen Format vorliegt und die Daten der ddbapi im Arbeitsverzeichnis vorliegen können wir die Klasse wie folgt anweden:
 ```py
 
-from information_extractor import information_extractor
+from scripts.information_extractor_lib import InformationExtractor
+import pandas as pd
 
-if __name__ == "__main__":
-    extractor = information_extractor(input_path="newspaper_concat.csv", output_path="page_id_plus_texts.csv", model_name="gemini-1.5-flash")
-    extractor.information_extraction_flow()
 
+df = pd.read_csv("newspaper_concat.csv", sep=";")
+
+information_extractor = InformationExtractor(df=df, page_id_colname="page_id", text_colname="plainpagefulltext", output_filename="out_df.csv")
+ergebnis_df = information_extractor.extract_data_loop(max_n = 300)
+print(ergebnis_df)
 
 
 ```
