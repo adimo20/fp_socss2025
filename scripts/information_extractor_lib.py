@@ -133,8 +133,9 @@ class InformationExtractor:
                 self.reduce_future_input(input_df=self.df, output_df=res_list_df_temp)
                 res_list_df_temp.to_csv(self.output_filename, sep=";", index=False)
         
-        self.reduce_future_input(input_df=self.df, output_df=res_list_df)
+        
         res_list_df = self.create_out_df(res_list)
+        self.reduce_future_input(input_df=self.df, output_df=res_list_df)
         res_list_df.to_csv(self.output_filename, sep=";", index=False)
         
         return(res_list_df)
