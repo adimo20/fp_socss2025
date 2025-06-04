@@ -47,7 +47,7 @@ Das aktuelle Skript `information_extractor_lib` implementiert die Klasse `Inform
 - `text_colname` - Spaltenname im Dataframe in dem die Volltexte gespeichert sind.
 - `output_path` - Pfad an dem die Ergebnisse der Informationsextraktion gespeichert werden sollen. Im Falle, dass bereits einmal Ergebnisse zwischengespeichert wurden von dieser Klasse - muss kein neuer Pfad angegeben werden. Die Klasse konkatiniert die alten Ergebnisse mit den neuen Ergebnissen (Sofern diese die gleichen Spaltennamen haben).
 
-Um nun den Task der Informationsextraction zu performen werden 5 verschiedene Funktionen der Klasse `information_extractor` durchlaufen:
+Um nun den Task der Informationsextraction zu performen werden verschiedene Funktionen der Klasse `information_extractor` implementiert:
 1. `set_config` - setzt den API Key.
 2. `load_model` - intialisiert das Model als als Attribut der Klasse. Dabei werden die Model Konfigurationen aus dem config_file geladen.
 3. `load_data` - speichert die input texte und die page ids in zwei elementen des init `page_ids` und `input_texts`
