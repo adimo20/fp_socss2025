@@ -88,18 +88,9 @@ class InformationExtractor:
         return res_parsed
     
     def create_out_df(self, r:list[dict]) -> pd.DataFrame:
-        """Funktion die aus dem Model output einen Dataframe produziert. Fall es unter dem output_path schon 
-        einen df gibt dann wird dieser geladen und mit den neuen Daten konkateniert."""
-        if os.path.isfile(self.output_filename):
-            existing_df = pd.read_csv(self.output_filename, sep=";")
-            new_df = pd.DataFrame(data={"page_id":[c["page_id"] for c in r], "text":[c["content"] for c in r]})
-            combined_df = pd.concat([existing_df, new_df])
-            
-            return combined_df
-        
-        else: 
-            new_df = pd.DataFrame(data={"page_id":[c["page_id"] for c in r], "text":[c["content"] for c in r]})
-            return new_df
+        """Funktion die aus dem Model output einen Dataframe produziert. """
+        new_df = pd.DataFrame(data={"page_id":[c["page_id"] for c in r], "text":[c["content"] for c in r]})
+        return new_df
     
     def check_model_output(self, model_output:dict, i:int) -> dict:
         """Funktion die den Model Output validiert. Falls es einen Fehler gab bei der API-Response - wird das jeweilige Element 
