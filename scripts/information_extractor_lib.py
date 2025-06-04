@@ -4,7 +4,35 @@ from time import sleep
 import os
 from scripts.config_file import configs, generation_config
 import json
+import sys
+import io
+from datetime import datetime
+import sys
+import io
 
+if hasattr(sys.stdout, 'buffer'):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
+
+def get_time_str() -> str:
+    t = str(datetime.now())
+    t = t[0:16].replace(":", "_").replace(" ", "_")
+    return t
+
+
+class DataManager:
+    def __init__(self, input_df, output_df):
+        self.input_df = input_df
+        self.output_df = output_df
+
+    def reduce_input_df(self) -> None:
+        time = get_time_str()
+        self.input_df.to_csv("archive/newspaper_concat"+ time + ".csv", sep = ";", index = False)
+            
+        #Rausfilter der bereits verarbeiteten page_ids und abspeichern für das nächste mal  
+        self.input_df = self.input_df[self.input_df.page_id.apply(lambda s: s not in self.output_df.page_id)]
+        self.input_df.to_csv("newspaper_concat.csv", sep=";", index= False)
+        return
 
 
 class InformationExtractor:
@@ -20,43 +48,48 @@ class InformationExtractor:
         self.text_colname = text_colname
         self.output_filename = output_filename
         
-    def set_config(self):
+    def set_config(self) -> None:
         """Setzen des API Keys, aus dem config_file"""
         API_KEY = configs["API_KEY"]
         genai.configure(api_key=API_KEY)
 
-    def load_model(self):
+    def load_model(self) -> None:
         """Laden des Models und setzen der Modelkonfigurationen"""
         self.model = genai.GenerativeModel(
             model_name=self.model_name,
             generation_config=generation_config)
         self.initialized_model = True
         
-    def load_data(self):
+    def load_data(self) -> None:
         """Einlesen der Daten aus dem Input-Path und speichern in den Variablen input_texts, page_id"""
         self.input_texts = self.df[self.text_colname]
         self.page_ids = self.df[self.page_id_colname]
 
-    def loading_flow(self):
+    def loading_flow(self) -> None:
+        """Flow der das Model im Objekt InformationExtractor lädt und es im init speichert."""
         flow = [self.set_config, self.load_model, self.load_data]
         for f in flow:
             f()
             print(f"{f} is done!")
 
-    def create_model_input(self,page_id, input_text):
+    def create_model_input(self,page_id:str, input_text:str) -> str:
+        """Funktion die den prompt erstellt, der später an die Model API gesendet wird"""
         self.model_input = {page_id:input_text}
         input_combined = f"{self.prompt}\n{self.model_input}"
         return input_combined
           
 
-    def extract_single_page(self, page_id, input_text):
+    def extract_single_page(self, page_id:str, input_text:str) -> dict:
+        """Funktion die die API anspricht und die einen strukturierten Output als response erhält"""
         input_combined = self.create_model_input(page_id=page_id, input_text=input_text)
         response = self.model.generate_content([input_combined])
         res_parsed = json.loads(response.text)
         print(res_parsed)
         return res_parsed
     
-    def create_out_df(self, r:list):
+    def create_out_df(self, r:list[dict]) -> pd.DataFrame:
+        """Funktion die aus dem Model output einen Dataframe produziert. Fall es unter dem output_path schon 
+        einen df gibt dann wird dieser geladen und mit den neuen Daten konkateniert."""
         if os.path.isfile(self.output_filename):
             existing_df = pd.read_csv(self.output_filename, sep=";")
             new_df = pd.DataFrame(data={"page_id":[c["page_id"] for c in r], "text":[c["content"] for c in r]})
@@ -68,7 +101,10 @@ class InformationExtractor:
             new_df = pd.DataFrame(data={"page_id":[c["page_id"] for c in r], "text":[c["content"] for c in r]})
             return new_df
     
-    def check_model_output(self, model_output, i):
+    def check_model_output(self, model_output:dict, i:int) -> dict:
+        """Funktion die den Model Output validiert. Falls es einen Fehler gab bei der API-Response - wird das jeweilige Element 
+        imputiert. Falls es keine Page id gibt wird die aktuelle ID nachgetragen, wenn kein Text aber eine page_id da ist, geben wir 
+        der Response einen Content der sag, das wir keine Informationen extrahieren konnten"""
         if "page_id" in model_output and "content" in model_output:
             return model_output
         elif "page_id" not in model_output:
@@ -79,8 +115,8 @@ class InformationExtractor:
             return model_output
             
 
-
-    def extract_data_loop(self, max_n):
+    def extract_data_loop(self, max_n:int)-> pd.DataFrame:
+        """Loop der die Informationsextraction durchführt. 0:n-te Zeilen des Input df werden verarbeitet."""
         self.loading_flow()
         res_list = []
         for i in range(0, max_n):
@@ -98,118 +134,3 @@ class InformationExtractor:
         
 
 
-###########################################
-###########################################
-
-
-class OcrCorrecter:
-    def __init__(self, model_name:str, df, page_id_colname:str, text_colname:str):
-        self.model_name:str = model_name
-        self.prompt:str = configs["PROMPT"]
-        self.model:str = None
-        self.df: pd.DataFrame = df
-        self.string_for_ocr_correction:str = None
-        self.prompt_for_ocr_correction:str = configs["prompt_ocr_correction"]
-        self.initialized_model:bool = False
-        self.lower_boundary:int = None
-        self.upper_boundary:int = None
-        self.page_id_colname:str =page_id_colname
-        self.text_colname:str = text_colname
-    
-    def set_config(self) -> None:
-        """Setzen des API Keys, aus dem config_file"""
-        API_KEY = configs["API_KEY"]
-        genai.configure(api_key=API_KEY)
-
-    def load_model(self) -> None:
-        """Laden des Models und setzen der Modelkonfigurationen"""
-        self.model = genai.GenerativeModel(
-            model_name=self.model_name,
-            generation_config=generation_config)
-        self.initialized_model = True
-
-    def create_batch_boundries(self) -> None:
-        batch_size = configs["batch_size"]
-        num_cases = len(self.df)
-        lower_boundary = [i for i in range(0,num_cases) if i % batch_size == 0]
-        upper_boundary = [i for i in range(0,num_cases) if i % batch_size == 0][1:]
-        upper_boundary[len(upper_boundary)-1] = num_cases-1
-        self.upper_boundary = upper_boundary
-        lower_boundary = lower_boundary[:len(lower_boundary)-1]
-        self.lower_boundary = lower_boundary
-        
-    def create_json_str(self, df, lower, upper) -> str:
-        """Creates a json format string containing the keys - page_id and values text - the ocr-error
-        texts. It is as big as the batch size"""    
-        j_list = [{ p : t} for p, t in zip(df[self.page_id_colname], df[self.text_colname])]
-        test_list = j_list[lower:upper]
-        test_list_str = json.dumps(test_list)
-        return test_list_str
-        
-    def correct_ocr(self) -> str:
-        """Sends a string in json format contaning the ocr-error texts and the given page_ids
-        as keys to the api and receives a corrected version of the json string."""
-        response = self.model.generate_content([self.prompt_for_ocr_correction, self.string_for_ocr_correction])
-        patterns_to_remove = ["```json", "```", "\n"]
-        response_text = response.text
-        for p in patterns_to_remove:
-            response_text = response_text.replace(p, "")
-
-        self.ocr_corrected_json = response_text
-    
-    def json_to_df(self) -> pd.DataFrame:
-
-        """Turns the json-output from api response to a dataframe - at first it 
-        seperates the the keys from the values and the saves both i seprate columns.
-        Meaning a df that contains the columns page_id and text."""
-        
-        def get_value_key(r):
-            value = r.values()
-            string = list(value)[0]
-            key_dict = r.keys()
-            key = list(key_dict)[0]
-            return key, string
-
-        resp = self.ocr_corrected_json
-        page_ids, texts = [], []
-        json_list = json.loads(resp)
-        for r in json_list:
-            key, string = get_value_key(r)
-            page_ids.append(key)
-            texts.append(string)
-
-        corrected_df = pd.DataFrame(data={"page_id" : page_ids, "texts": texts})
-        return corrected_df     
-    
-    def ocr_correction_flow(self) -> pd.DataFrame:
-        """Workflow für die Ocr-Correction!"""
-        flow = [self.set_config, self.load_model, self.correct_ocr, self.json_to_df]
-
-        for i, f in enumerate(flow):
-            
-            if self.initialized_model and i < 2: continue 
-            print(f"{f} is done!", flush=True)
-            
-            if i < 3:
-                f()
-            else:
-                result = f()
-                print(f"{f} is done!", flush=True)
-                return result
-    
-    def run_batched_correction_flow(self) -> None:
-        self.create_batch_boundries()
-        res_list = []   
-        for l, u in zip(self.lower_boundary, self.upper_boundary):
-            j_string = self.create_json_str(self.df, l, u)
-            self.string_for_ocr_correction = j_string
-            resp = self.ocr_correction_flow()
-            res_list.append(resp)
-            if u % 200 == 0:
-                res_df = pd.concat(res_list)
-                res_df.to_csv("corrected_df.csv", sep=";")
-
-
-
-
-    
