@@ -30,7 +30,7 @@ class DataManager:
         self.input_df.to_csv("archive/newspaper_concat"+ time + ".csv", sep = ";", index = False)
             
         #Rausfilter der bereits verarbeiteten page_ids und abspeichern für das nächste mal  
-        self.input_df = self.input_df[self.input_df.page_id.apply(lambda s: s not in self.output_df.page_id)]
+        self.input_df = self.input_df[self.input_df.page_id.apply(lambda s: s not in self.output_df.page_id.to_list())]
         self.input_df.to_csv("newspaper_concat.csv", sep=";", index= False)
         return
 
@@ -81,15 +81,23 @@ class InformationExtractor:
 
     def extract_single_page(self, page_id:str, input_text:str) -> dict:
         """Funktion die die API anspricht und die einen strukturierten Output als response erhält"""
-        input_combined = self.create_model_input(page_id=page_id, input_text=input_text)
-        response = self.model.generate_content([input_combined])
-        res_parsed = json.loads(response.text)
-        print(res_parsed)
-        return res_parsed
+        try:
+            input_combined = self.create_model_input(page_id=page_id, input_text=input_text)
+            response = self.model.generate_content([input_combined])
+            res_parsed = json.loads(response.text)
+            print(res_parsed)
+            return res_parsed
+        except:
+            return {"content":"Error while reading the response - try this page_id later"}
     
     def create_out_df(self, r:list[dict]) -> pd.DataFrame:
-        """Funktion die aus dem Model output einen Dataframe produziert. """
-        new_df = pd.DataFrame(data={"page_id":[c["page_id"] for c in r], "text":[c["content"] for c in r]})
+        """Funktion die aus dem Model output einen Dataframe produziert"""
+        page_id_list = [c["page_id"] for c in r]
+        text_list = [c["content"] for c in r]
+        time = get_time_str()
+        time_list = [time] * len(page_id_list)
+
+        new_df = pd.DataFrame(data={"page_id":page_id_list, "text":text_list, "time":time_list})
         return new_df
     
     def check_model_output(self, model_output:dict, i:int) -> dict:
@@ -105,6 +113,11 @@ class InformationExtractor:
             model_output.update({"content":"Nothing found in here"})
             return model_output
             
+    def reduce_future_input(self, input_df, output_df) -> None:
+        dm_reduce_processed_data = DataManager(input_df=input_df, output_df=output_df)
+        dm_reduce_processed_data.reduce_input_df()
+        return
+        
 
     def extract_data_loop(self, max_n:int)-> pd.DataFrame:
         """Loop der die Informationsextraction durchführt. 0:n-te Zeilen des Input df werden verarbeitet."""
@@ -115,12 +128,15 @@ class InformationExtractor:
             res_temp = self.check_model_output(model_output=res_temp, i=i)
             res_list.append(res_temp)
             sleep(6)
-            if i % 5 == 0:
+            if i % 20 == 0:
                 res_list_df_temp = self.create_out_df(res_list)
+                self.reduce_future_input(input_df=self.df, output_df=res_list_df_temp)
                 res_list_df_temp.to_csv(self.output_filename, sep=";", index=False)
         
-            
+        self.reduce_future_input(input_df=self.df, output_df=res_list_df)
         res_list_df = self.create_out_df(res_list)
+        res_list_df.to_csv(self.output_filename, sep=";", index=False)
+        
         return(res_list_df)
         
 
