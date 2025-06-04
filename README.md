@@ -13,6 +13,11 @@ Das deutsche Zeitungsportal bietet auf seiner <a href = "https://github.com/Deut
 </p>
 Diese Schlagwortsuche kann nicht nur auf der Website durchgeführt werden, sondern ist auch über eine API zugänglich. Dies ermöglicht es uns auf einem sehr einfachen Weg auf die digitialisierten Texte zuzugreifen und sie in einem für uns sehr einfach nutzbaren Format zu speichern. (Anstatt sehr umständlich mit Selenium einem Scraper zu schreiben).  
 
+# Konzept 
+![Flowchart](https://github.com/user-attachments/assets/d275bb77-8803-4dc5-81fd-ccfdb6360782)
+
+
+
 # get_data_from_ddbapi
 Dieses Skript verwendet das ddbapi Packet um Daten von der API des deutschen Zeitungsportals zu entnehmen. Relevante Dokumentation zu diesem Paket finden sie <a href = "https://github.com/Deutsche-Digitale-Bibliothek/ddblabs-ddbapi">hier<a>. Das Paket bietet im Grunde nur eine funktion die für die unsere Zwecke relevant ist `zp_pages()`. Sie wird wie folgt angewendent:
 ```py
