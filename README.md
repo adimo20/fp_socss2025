@@ -1,8 +1,12 @@
 # fp_socss202
 ### Table of Content
 - [get_data_from_ddbapi](#get_data_from_ddbapi)
+- [Konzept](#Konzept)
 - [deutsches_zeitungs_portal](#deutsches_zeitungs_portal)
-- [#InformationExtractor](#InformationExtractor)
+- [InformationExtractor](#InformationExtractor)
+- [Literatur](#Literatur)
+- [Sample](#Sample)
+- [Flowchart der InformationExtractor Klasse](#Flowchart)
 
 # deutsches_zeitungs_portal
 Das deutsche Zeitungsportal bietet auf seiner <a href = "https://github.com/Deutsche-Digitale-Bibliothek/ddblabs-ddbapi">Internetseite<a> die Möglichkeit eine sehr große Anzahl von historischen Zeitungen zu betrachten. Dabei lässt sich auch eine Schlagwortsuche durchführen. Sucht man nach dem Begriff Heiratsgesuch findet man auf ungefähr 21000 Zeitungsseiten ein Match. 
@@ -73,7 +77,10 @@ print(ergebnis_df)
 
 ```
 
-    
+# Literatur
+Folgende Literatur könnte im Kontext dieses Repos interessant sein:
+Schwitter, Nicole (2025): Using large language models for preprocessing and information extraction from unstructured text: A proof-of-concept application in the social sciences, in: Methodological Innovations 18 (1), 61-65.
+Foisy, Laurence-Olivier (2025): Prompting the Machine: Introducing an LLM Data Extraction Method for Social Scientists, in:  Social Science Computer Review 0 (0), S. 1-14.
 
 # Sample
 
