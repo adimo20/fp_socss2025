@@ -18,7 +18,7 @@ Das deutsche Zeitungsportal bietet auf seiner <a href = "https://github.com/Deut
 Diese Schlagwortsuche kann nicht nur auf der Website durchgeführt werden, sondern ist auch über eine API zugänglich. Dies ermöglicht es uns auf einem sehr einfachen Weg auf die digitialisierten Texte zuzugreifen und sie in einem für uns sehr einfach nutzbaren Format zu speichern. (Anstatt sehr umständlich mit Selenium einem Scraper zu schreiben).  
 
 # Konzept 
-![Flowchart](https://github.com/user-attachments/assets/d275bb77-8803-4dc5-81fd-ccfdb6360782)
+![Flowchart (1)](https://github.com/user-attachments/assets/648587df-31a5-4615-8e21-cce8b77bb24e)
 
 
 
