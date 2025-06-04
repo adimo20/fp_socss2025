@@ -79,8 +79,8 @@ print(ergebnis_df)
 
 # Literatur
 Folgende Literatur könnte im Kontext dieses Repos interessant sein:
-Schwitter, Nicole (2025): Using large language models for preprocessing and information extraction from unstructured text: A proof-of-concept application in the social sciences, in: Methodological Innovations 18 (1), 61-65.
-Foisy, Laurence-Olivier (2025): Prompting the Machine: Introducing an LLM Data Extraction Method for Social Scientists, in:  Social Science Computer Review 0 (0), S. 1-14.
+- Schwitter, Nicole (2025): Using large language models for preprocessing and information extraction from unstructured text: A proof-of-concept application in the social sciences, in: Methodological Innovations 18 (1), 61-65.
+- Foisy, Laurence-Olivier et al. (2025): Prompting the Machine: Introducing an LLM Data Extraction Method for Social Scientists, in:  Social Science Computer Review 0 (0), S. 1-14.
 
 # Sample
 
