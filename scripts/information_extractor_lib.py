@@ -19,6 +19,8 @@ def get_time_str() -> str:
     t = t[0:16].replace(":", "_").replace(" ", "_")
     return t
 
+def create_output_path_with_time_stamp(output_path:str)-> str:
+    return output_path.replace(".csv", get_time_str()) + ".csv"
 
 class DataManager:
     def __init__(self, input_df, output_df):
@@ -27,6 +29,8 @@ class DataManager:
 
     def reduce_input_df(self) -> None:
         time = get_time_str()
+        if not os.path.isdir("archive"): os.makedirs("archive")
+        #filename nicht hardcoden oder einen generischen Namen verwenden
         self.input_df.to_csv("archive/newspaper_concat"+ time + ".csv", sep = ";", index = False)
             
         #Rausfilter der bereits verarbeiteten page_ids und abspeichern für das nächste mal  
@@ -133,10 +137,11 @@ class InformationExtractor:
                 self.reduce_future_input(input_df=self.df, output_df=res_list_df_temp)
                 res_list_df_temp.to_csv(self.output_filename, sep=";", index=False)
         
-        
         res_list_df = self.create_out_df(res_list)
         self.reduce_future_input(input_df=self.df, output_df=res_list_df)
-        res_list_df.to_csv(self.output_filename, sep=";", index=False)
+        #Final output will then be timestamped
+        out_filename_timestamped = create_output_path_with_time_stamp(self.output_filename)
+        res_list_df.to_csv(out_filename_timestamped, sep=";", index=False)
         
         return(res_list_df)
         
