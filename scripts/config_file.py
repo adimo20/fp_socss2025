@@ -1,7 +1,7 @@
 from scripts.schemes import ExtractedContent
-
+import os
 configs = {
-  "API_KEY" : "API-Key hier in diesen String schreiben",
+  "API_KEY" : os.environ.get("GEMINI_API_KEY"),
   
   "PROMPT":"Your porpouse is it to extract a pre-defined part of the text i will provide you. The text i'll provide you is an ocr read" \
   "historical newspaper. Your task is it to extract the marriage request from the text. A marriage request is defined a person, male or female, stating their interest in finding"
