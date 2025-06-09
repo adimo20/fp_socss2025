@@ -3,3 +3,4 @@ google
 google.generativeai
 pydantic
 ddbapi
+rapidfuzz
