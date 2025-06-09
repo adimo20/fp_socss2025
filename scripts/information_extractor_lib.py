@@ -51,6 +51,8 @@ class InformationExtractor:
         self.page_id_colname = page_id_colname
         self.text_colname = text_colname
         self.output_filename = output_filename
+        self.sleeping_time = 2
+        self.safe_results_external = False
         
     def set_config(self) -> None:
         """Setzen des API Keys, aus dem config_file"""
@@ -89,7 +91,7 @@ class InformationExtractor:
             input_combined = self.create_model_input(page_id=page_id, input_text=input_text)
             response = self.model.generate_content([input_combined])
             res_parsed = json.loads(response.text)
-            print(res_parsed)
+            
             return res_parsed
         except:
             return {"content":"Error while reading the response - try this page_id later"}
@@ -130,19 +132,22 @@ class InformationExtractor:
         for i in range(0, max_n):
             res_temp = self.extract_single_page(self.page_ids[i], self.input_texts[i])
             res_temp = self.check_model_output(model_output=res_temp, i=i)
+            res_temp.update({"page_id":self.page_ids[i]})
             res_list.append(res_temp)
-            sleep(6)
-            if i % 20 == 0:
+            print(res_temp)
+            sleep(self.sleeping_time)
+            if i % 100 == 0 and self.safe_results_external:
                 res_list_df_temp = self.create_out_df(res_list)
                 self.reduce_future_input(input_df=self.df, output_df=res_list_df_temp)
                 res_list_df_temp.to_csv(self.output_filename, sep=";", index=False)
         
         res_list_df = self.create_out_df(res_list)
-        self.reduce_future_input(input_df=self.df, output_df=res_list_df)
-        #Final output will then be timestamped
-        out_filename_timestamped = create_output_path_with_time_stamp(self.output_filename)
-        res_list_df.to_csv(out_filename_timestamped, sep=";", index=False)
         
+        #Final output will then be timestamped
+        if self.safe_results_external:
+            self.reduce_future_input(input_df=self.df, output_df=res_list_df)
+            out_filename_timestamped = create_output_path_with_time_stamp(self.output_filename)
+            res_list_df.to_csv(out_filename_timestamped, sep=";", index=False)   
         return(res_list_df)
         
 
