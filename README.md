@@ -4,6 +4,7 @@
 - [Konzept](#Konzept)
 - [deutsches_zeitungs_portal](#deutsches_zeitungs_portal)
 - [InformationExtractor](#InformationExtractor)
+- [Validation](#Validation)
 - [Literatur](#Literatur)
 - [Sample](#Sample)
 - [Flowchart der InformationExtractor Klasse](#Flowchart)
@@ -75,6 +76,15 @@ print(ergebnis_df)
 
 
 ```
+
+# Validatition
+
+Um die Accuracy der entnommenen Informationen anzuwenden wird die Methode `find_similiar_sequence` implementiert. Diese erhält den extrahierten Text `dst_doc` und das original Dokument aus dem die Informationen entnommen wurden `source_doc` als Input. Es wird überprüft ob die entnomme Textpassage 1:1 im original Dokument zu finden ist. Falls das nicht der Fall ist wird überprüft ob es eine Textpassage in original Dokument die anhand der Levensteindistance approximativ die gleiche ist. Es kann immer passieren, dass das LLM ein Leerzeichen, Komma etc. ergänzt oder weglässt. Daher sollten sich im original Dokument Passagen finden die eine Levenstein Similiarity von ~0.98 haben. Ist dieser Fall gegeben, sollte der String im Sinn und der synatktischen Struktur der gleiche sein.  `find_similiar_sequence`  returnt True oder False: Das Konzept der Funktion ist wie folgt: 
+<br>
+
+![image](https://github.com/user-attachments/assets/38a9eb22-a113-44c1-8937-25ae8435752c)
+
+
 
 # Literatur
 Folgende Literatur könnte im Kontext dieses Repos interessant sein:
