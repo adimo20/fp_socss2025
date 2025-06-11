@@ -152,5 +152,91 @@ class InformationExtractor:
         
 
 
+from rapidfuzz import fuzz
+
+class ExtractionValidator:
+    def __init__(self,dst_doc:list, source_doc:list, threshold:float ):
+        self.dst_doc = dst_doc
+        self.source_doc = source_doc
+        self.threshold = threshold
+
+    def find_similiar_sequence(self, dst_doc:str, source_doc:str, threshold:float) -> pd.DataFrame:
+        """Checks if the extracted content is with a certain threshold in the given document. If a 1:1 match is found it directly returns 
+        True - if not levenstein distance is used to check if the extracted string is in the document with a certain threshold of stringsimiliarties
+        Parameters:
+            dst_doc: str - extracted content
+            source_doc: str -  original document
+            threshold: float - threshold for stringsimiliarities 
+            return_msk: bool - parameter True - just return the mask if val is in doc or false the df with the matches and the ratio will be returned
+        Returns:
+            pd.DataFrame containing the potential matches
+        """
+        
+        n = len(dst_doc)
+        n_src = len(source_doc)
+        i = 0
+
+        best_match_list = []
+        best_ratio_list = []
+        while n < n_src:
+            stringsim = fuzz.ratio(dst_doc, source_doc[i:n])/100
+            if stringsim > threshold: 
+                best_match_list.append(source_doc[i:n])
+                best_ratio_list.append(stringsim)
+            i += 1
+            n += 1
+
+        matches_df = pd.DataFrame(data={"ratio":best_ratio_list, "match":best_match_list, "extracted":dst_doc})
+        
+        return matches_df
+    
+    def is_match(self, dst_doc:str, source_doc:str, threshold:float) -> bool:
+        """Checks if a match was found.
+        Parameters:
+            dst_doc: str - extracted content
+            source_doc: str -  original document
+            threshold: float - threshold for stringsimiliarities 
+            return_msk: bool - parameter True - just return the mask if val is in doc or false the df with the matches and the ratio will be returned
+        Returns:
+            True if String is in the original document False if it is not in the document within the threshold   
+        
+        
+        """
+        if dst_doc in source_doc: return True
+        match_df = self.find_similiar_sequence(dst_doc, source_doc, threshold)
+        if len(match_df) > 0:
+            return True
+        else:
+            return False
+        
+    def apply_is_match_on_data(self) -> list[bool]:
+        """Applys is_match over all data - Can be used as a mask to filter the values that are not correctly extracted
+        
+        Parameter:
+        None
+
+        Return: 
+        List of bool values that determining if the given extracted text was is in (True) the source text within the given threshold or not (False)
+
+        """
+        found_match_list:list[bool] = [self.is_match(d, s, self.threshold) for d, s in zip(self.dst_doc, self.source_doc)]
+        return found_match_list
+    
+    def calculate_extraction_accuracy(self) -> tuple:
+        """Return tuple with the accuracy of the text extraction"""
+        n = len(self.dst_doc)
+        match_bool = self.apply_is_match_on_data()
+        true_positive = sum(match_bool)
+        
+        return ("Accuracy", true_positive/n)
+
+    
+      
+
+
 if __name__ == "__main__":
-    print("hello!")
+    dat_joined = pd.read_pickle("dat_joined.pkl")
+    validation = ExtractionValidator(dst_doc=dat_joined.text.tolist(), source_doc=dat_joined.plainpagefulltext.tolist(), threshold=0.98)
+    result = validation.calculate_extraction_accuracy()
+    print(result)
+    
