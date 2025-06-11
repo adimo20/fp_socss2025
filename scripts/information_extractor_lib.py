@@ -239,3 +239,4 @@ if __name__ == "__main__":
     validation = ExtractionValidator(dst_doc=dat_joined.text.tolist(), source_doc=dat_joined.plainpagefulltext.tolist(), threshold=0.98)
     result = validation.calculate_extraction_accuracy()
     print(result)
+    
