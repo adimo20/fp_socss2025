@@ -1,16 +1,17 @@
 # fp_socss202
 ### Table of Content
-- [get_data_from_ddbapi](#get_data_from_ddbapi)
-- [Konzept](#Konzept)
 - [deutsches_zeitungs_portal](#deutsches_zeitungs_portal)
-- [InformationExtractor](#InformationExtractor)
+- [Konzept](#konzept)
+- [get_data_from_ddbapi](#get_data_from_ddbapi)
+- [informationExtractor](#informationExtractor)
 - [Validation](#Validation)
 - [Literatur](#Literatur)
 - [Sample](#Sample)
 - [Flowchart der InformationExtractor Klasse](#Flowchart)
 
 # deutsches_zeitungs_portal
-Das deutsche Zeitungsportal bietet auf seiner <a href = "https://github.com/Deutsche-Digitale-Bibliothek/ddblabs-ddbapi">Internetseite<a> die Möglichkeit eine sehr große Anzahl von historischen Zeitungen zu betrachten. Dabei lässt sich auch eine Schlagwortsuche durchführen. Sucht man nach dem Begriff Heiratsgesuch findet man auf ungefähr 21000 Zeitungsseiten ein Match. 
+
+Das deutsche Zeitungsportal bietet auf seiner <a href = "https://github.com/Deutsche-Digitale-Bibliothek/ddblabs-ddbapi">Internetseite</a> die Möglichkeit eine sehr große Anzahl von historischen Zeitungen zu betrachten. Dabei lässt sich auch eine Schlagwortsuche durchführen. Sucht man nach dem Begriff Heiratsgesuch findet man auf ungefähr 21000 Zeitungsseiten ein Match. 
 <p>
 <br>
 <img width="829" alt="image" src="https://github.com/user-attachments/assets/4fb7c476-bde7-4c8f-a606-92fa6d48f6a5" />
@@ -18,13 +19,14 @@ Das deutsche Zeitungsportal bietet auf seiner <a href = "https://github.com/Deut
 </p>
 Diese Schlagwortsuche kann nicht nur auf der Website durchgeführt werden, sondern ist auch über eine API zugänglich. Dies ermöglicht es uns auf einem sehr einfachen Weg auf die digitialisierten Texte zuzugreifen und sie in einem für uns sehr einfach nutzbaren Format zu speichern. (Anstatt sehr umständlich mit Selenium einem Scraper zu schreiben).  
 
-# Konzept 
+# konzept 
+
 ![Flowchart (1)](https://github.com/user-attachments/assets/648587df-31a5-4615-8e21-cce8b77bb24e)
 
 
 
 # get_data_from_ddbapi
-Dieses Skript verwendet das ddbapi Packet um Daten von der API des deutschen Zeitungsportals zu entnehmen. Relevante Dokumentation zu diesem Paket finden sie <a href = "https://github.com/Deutsche-Digitale-Bibliothek/ddblabs-ddbapi">hier<a>. Das Paket bietet im Grunde nur eine funktion die für die unsere Zwecke relevant ist `zp_pages()`. Sie wird wie folgt angewendent:
+Dieses Skript verwendet das ddbapi Packet um Daten von der API des deutschen Zeitungsportals zu entnehmen. Relevante Dokumentation zu diesem Paket finden sie <a href = "https://github.com/Deutsche-Digitale-Bibliothek/ddblabs-ddbapi">hier</a>. Das Paket bietet im Grunde nur eine funktion die für die unsere Zwecke relevant ist `zp_pages()`. Sie wird wie folgt angewendent:
 ```py
 df = zp_pages(
         publication_date='[1850-01-01T12:00:00Z TO 1980-12-31T12:00:00Z]', 
@@ -40,7 +42,7 @@ df = zp_pages(
 Da wir eine Art Rate-Limit-Fehler bekommen, wenn wir keinen Ort bei der API-Abfrage angeben, müssen wir durch die möglichen Orte loopen (die Möglichkeiten findet man auf der Webiste der DDB, wenn man einen Suchbegroff eingibt), sodass wir für jeden Ort eine eigene Anfrage stellen - das löst den Rate-Limit-Fehler.
 
 
-# InformationExtractor
+# informationExtractor
 Nachdem die Daten über die API importiert worden sind müssen wir sie jetzt für uns nutzbar machen. Die Texte die wir erhalten haben sind die Volltexte, der Seiten in denen ein Match mit dem Suchwort "Heiratsgesuch" gefunden wurde. Um nun die konkreten Kontaktanzeigen aus diesen Volltexten zu entnehmen verwenden wir die GeminiAPI. An diese senden wir den Volltext und geben explizite Anweisungen wie und welchen Text sie aus dem Volltext extrahieren soll. So erhalten nur die relevanten Stellen aus dem Dokument. 
 Das aktuelle Skript `information_extractor_lib` implementiert die Klasse `InformationExtractor`. Diese Klasse bekommt as Input drei Werte:
 - `df` - pandas dataframe der die von der ddbapi entnommenen daten enthält
@@ -79,11 +81,26 @@ print(ergebnis_df)
 
 # Validatition
 
-Um die Accuracy der entnommenen Informationen anzuwenden wird die Methode `find_similiar_sequence` implementiert. Diese erhält den extrahierten Text `dst_doc` und das original Dokument aus dem die Informationen entnommen wurden `source_doc` als Input. Es wird überprüft ob die entnomme Textpassage 1:1 im original Dokument zu finden ist. Falls das nicht der Fall ist wird überprüft ob es eine Textpassage in original Dokument die anhand der Levensteindistance approximativ die gleiche ist. Es kann immer passieren, dass das LLM ein Leerzeichen, Komma etc. ergänzt oder weglässt. Daher sollten sich im original Dokument Passagen finden die eine Levenstein Similiarity von ~0.98 haben. Ist dieser Fall gegeben, sollte der String im Sinn und der synatktischen Struktur der gleiche sein.  `find_similiar_sequence`  returnt True oder False: Das Konzept der Funktion ist wie folgt: 
+Um die Accuracy der entnommenen Informationen anzuwenden wird die Klasse `ExtractionValidator` implementiert. Diese erhält den extrahierten Text `dst_doc` und das original Dokument aus dem die Informationen entnommen wurden `source_doc`, sowie einen Threshold als Input. Mit der Funktion `calculate_extraction_accuracy`  wird überprüft ob die entnomme Textpassage 1:1 im original Dokument zu finden ist. Falls das nicht der Fall ist wird überprüft ob es eine Textpassage in original Dokument die anhand der Levensteindistance approximativ die gleiche ist. Es kann immer passieren, dass das LLM ein Leerzeichen, Komma etc. ergänzt oder weglässt. Daher sollten sich im original Dokument Passagen finden die eine Levenstein Similiarity von ~0.98 haben. Ist dieser Fall gegeben, sollte der String im Sinn und der synatktischen Struktur der gleiche sein.  `calculate_extraction_accuracy`  returnt die Accuracy der Infromations extraction als tuple: 
 <br>
 
 ![image](https://github.com/user-attachments/assets/38a9eb22-a113-44c1-8937-25ae8435752c)
 
+Anzuwenden ist die Klasse wie folgt, wobei dat_joined ein Datensatz ist, der die extrahierten Texte in der Variable `text` enthält und den originalen Text in der Variable `plainpagefulltext`.
+
+```py 
+
+dat_joined = pd.read_pickle("dat_joined.pkl")
+validation = ExtractionValidator(dst_doc=dat_joined.text.tolist(), source_doc=dat_joined.plainpagefulltext.tolist(), threshold=0.98)
+result = validation.calculate_extraction_accuracy()
+print(result)
+
+#In case you want to just check one text        
+validator = ExtractionValidator(dst_doc=None, source_doc=None, threshold=None)
+result2 = validator.find_similiar_sequence(dst_doc=dat_joined.text[0], source_doc=dat_joined.plainpagefulltext[0], threshold=0.98)
+print(result2)
+
+```
 
 
 # Literatur
