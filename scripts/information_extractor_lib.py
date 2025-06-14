@@ -256,4 +256,9 @@ if __name__ == "__main__":
     validation = ExtractionValidator(dst_doc=dat_joined.text.tolist(), source_doc=dat_joined.plainpagefulltext.tolist(), threshold=0.98)
     result = validation.calculate_extraction_accuracy()
     print(result)
+    #In case you want to just check one text        
+    validator = ExtractionValidator(dst_doc=None, source_doc=None, threshold=None)
+    result = validator.find_similiar_sequence(dst_doc=dat_joined.text[0], source_doc=dat_joined.plainpagefulltext[0], threshold=0.98)
+    result
+
     
