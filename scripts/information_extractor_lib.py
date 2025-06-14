@@ -46,21 +46,21 @@ class InformationExtractor:
         self.model:str = None
         self.page_ids:list = None
         self.input_texts:list = None
-        self.df = df
+        self.df:pd.DataFrame = df
         self.model_input = None
-        self.page_id_colname = page_id_colname
-        self.text_colname = text_colname
-        self.output_filename = output_filename
-        self.sleeping_time = 2
-        self.safe_results_external = False
+        self.page_id_colname:str = page_id_colname
+        self.text_colname:str = text_colname
+        self.output_filename:str = output_filename
+        self.sleeping_time:int = 2
+        self.safe_results_external:bool = False
         
     def set_config(self) -> None:
-        """Setzen des API Keys, aus dem config_file"""
+        """Setzen des API Keys, aus den im config dict gespeicherten Daten"""
         API_KEY = configs["API_KEY"]
         genai.configure(api_key=API_KEY)
 
     def load_model(self) -> None:
-        """Laden des Models und setzen der Modelkonfigurationen"""
+        """Laden des Models und setzen der Modelkonfigurationen. Generation Config sollte im config_file gespeichert sein"""
         self.model = genai.GenerativeModel(
             model_name=self.model_name,
             generation_config=generation_config)
@@ -79,14 +79,29 @@ class InformationExtractor:
             print(f"{f} is done!")
 
     def create_model_input(self,page_id:str, input_text:str) -> str:
-        """Funktion die den prompt erstellt, der später an die Model API gesendet wird"""
+        """Funktion die den prompt erstellt, der später an die Model API gesendet wird
+        Parameters:
+        page_id - id des inputs
+        input_text - Text der als Input für das Model verwendet wird
+
+        Returns:
+        string that combines the input text and input prompt
+        
+        """
         self.model_input = {page_id:input_text}
         input_combined = f"{self.prompt}\n{self.model_input}"
         return input_combined
           
 
     def extract_single_page(self, page_id:str, input_text:str) -> dict:
-        """Funktion die die API anspricht und die einen strukturierten Output als response erhält"""
+        """Funktion die die API anspricht und die einen strukturierten Output als response erhält
+        Parameters:
+        page_id - id des inputs
+        input_text - Text der als Input für das Model verwendet wird
+
+        Returns:
+        model response
+        """
         try:
             input_combined = self.create_model_input(page_id=page_id, input_text=input_text)
             response = self.model.generate_content([input_combined])
@@ -110,6 +125,7 @@ class InformationExtractor:
         """Funktion die den Model Output validiert. Falls es einen Fehler gab bei der API-Response - wird das jeweilige Element 
         imputiert. Falls es keine Page id gibt wird die aktuelle ID nachgetragen, wenn kein Text aber eine page_id da ist, geben wir 
         der Response einen Content der sag, das wir keine Informationen extrahieren konnten"""
+        
         if "page_id" in model_output and "content" in model_output:
             return model_output
         elif "page_id" not in model_output:
@@ -191,7 +207,7 @@ class ExtractionValidator:
         return matches_df
     
     def is_match(self, dst_doc:str, source_doc:str, threshold:float) -> bool:
-        """Checks if a match was found.
+        """Checks if a match was found. Check if the text is either one to one in the match or it is within the threshold similiar
         Parameters:
             dst_doc: str - extracted content
             source_doc: str -  original document
@@ -202,6 +218,7 @@ class ExtractionValidator:
         
         
         """
+        
         if dst_doc in source_doc: return True
         match_df = self.find_similiar_sequence(dst_doc, source_doc, threshold)
         if len(match_df) > 0:
