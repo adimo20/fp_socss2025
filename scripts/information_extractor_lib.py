@@ -41,8 +41,10 @@ class DataManager:
 
 class InformationExtractor:
     def __init__(self, df:pd.DataFrame,page_id_colname:str, text_colname:str, output_filename:str):
-        self.model_name:str = configs["model_name"]
-        self.prompt:str = configs["PROMPT"]
+        self.configs = configs
+        #Das hier könnte zu problemen führen
+        self.model_name:str = None
+        self.prompt:str = None
         self.model:str = None
         self.page_ids:list = None
         self.input_texts:list = None
@@ -52,18 +54,27 @@ class InformationExtractor:
         self.text_colname:str = text_colname
         self.output_filename:str = output_filename
         self.sleeping_time:int = 2
+        #By default no results are saved
         self.safe_results_external:bool = False
+        self.generation_config = generation_config
+        self.verbose:bool = False #if true prints out the extracted contet
+        self.save_one_result_per_row:bool = True
+        
         
     def set_config(self) -> None:
         """Setzen des API Keys, aus den im config dict gespeicherten Daten"""
-        API_KEY = configs["API_KEY"]
+        API_KEY = self.configs["API_KEY"]
+        if self.model_name is None:
+            self.model_name:str = self.configs["model_name"]
+        if self.prompt is None:
+            self.prompt:str = self.configs["PROMPT"]
         genai.configure(api_key=API_KEY)
 
     def load_model(self) -> None:
         """Laden des Models und setzen der Modelkonfigurationen. Generation Config sollte im config_file gespeichert sein"""
         self.model = genai.GenerativeModel(
             model_name=self.model_name,
-            generation_config=generation_config)
+            generation_config=self.generation_config)
         self.initialized_model = True
         
     def load_data(self) -> None:
@@ -76,7 +87,7 @@ class InformationExtractor:
         flow = [self.set_config, self.load_model, self.load_data]
         for f in flow:
             f()
-            print(f"{f} is done!")
+            if self.verbose: print(f"{f} is done!")
 
     def create_model_input(self,page_id:str, input_text:str) -> str:
         """Funktion die den prompt erstellt, der später an die Model API gesendet wird
@@ -150,7 +161,7 @@ class InformationExtractor:
             res_temp = self.check_model_output(model_output=res_temp, i=i)
             res_temp.update({"page_id":self.page_ids[i]})
             res_list.append(res_temp)
-            print(res_temp)
+            if self.verbose: print(res_temp)
             sleep(self.sleeping_time)
             if i % 100 == 0 and self.safe_results_external:
                 res_list_df_temp = self.create_out_df(res_list)
@@ -158,7 +169,8 @@ class InformationExtractor:
                 res_list_df_temp.to_csv(self.output_filename, sep=";", index=False)
         
         res_list_df = self.create_out_df(res_list)
-        
+        if self.save_one_result_per_row: 
+            res_list_df["text"] = res_list_df.text.apply(lambda l: l[0])
         #Final output will then be timestamped
         if self.safe_results_external:
             self.reduce_future_input(input_df=self.df, output_df=res_list_df)
@@ -171,7 +183,7 @@ class InformationExtractor:
 from rapidfuzz import fuzz
 
 class ExtractionValidator:
-    def __init__(self,dst_doc:list, source_doc:list, threshold:float ):
+    def __init__(self,dst_doc:list, source_doc:list, threshold:float):
         self.dst_doc = dst_doc
         self.source_doc = source_doc
         self.threshold = threshold
