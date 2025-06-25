@@ -9,6 +9,8 @@ import io
 from datetime import datetime
 import sys
 import io
+from rapidfuzz import fuzz
+
 
 if hasattr(sys.stdout, 'buffer'):
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -178,9 +180,6 @@ class InformationExtractor:
             res_list_df.to_csv(out_filename_timestamped, sep=";", index=False)   
         return(res_list_df)
         
-
-
-from rapidfuzz import fuzz
 
 class ExtractionValidator:
     def __init__(self,dst_doc:list, source_doc:list, threshold:float):
