@@ -55,7 +55,7 @@ class InformationExtractor:
         self.page_id_colname:str = page_id_colname
         self.text_colname:str = text_colname
         self.output_filename:str = output_filename
-        self.sleeping_time:int = 2
+        self.sleeping_time:int = 4 #This is critical - because if the model responds to fast too often then this will result in ratelimit errors. 
         #By default no results are saved
         self.safe_results_external:bool = False
         self.generation_config = generation_config
@@ -171,7 +171,8 @@ class InformationExtractor:
                 res_list_df_temp.to_csv(self.output_filename, sep=";", index=False)
         
         res_list_df = self.create_out_df(res_list)
-        if self.save_one_result_per_row: 
+        #Important content of text needs to be a list otherwise this wont work - this is wrong literally safes one resut per row or am i wrong
+        if self.save_one_result_per_row and isinstance(res_list_df.text[0], list): 
             res_list_df["text"] = res_list_df.text.apply(lambda l: l[0])
         #Final output will then be timestamped
         if self.safe_results_external:
@@ -182,12 +183,12 @@ class InformationExtractor:
         
 
 class ExtractionValidator:
-    def __init__(self,dst_doc:list, source_doc:list, threshold:float):
+    def __init__(self,dst_doc:list=None, source_doc:list=None, threshold:float=None):
         self.dst_doc = dst_doc
         self.source_doc = source_doc
         self.threshold = threshold
 
-    def find_similiar_sequence(self, dst_doc:str, source_doc:str, threshold:float) -> pd.DataFrame:
+    def find_similiar_sequence(self, dst_doc:str, source_doc:str, threshold:float, break_when_threshold:bool) -> pd.DataFrame:
         """Checks if the extracted content is with a certain threshold in the given document. If a 1:1 match is found it directly returns 
         True - if not levenstein distance is used to check if the extracted string is in the document with a certain threshold of stringsimiliarties
         Parameters:
@@ -210,6 +211,8 @@ class ExtractionValidator:
             if stringsim > threshold: 
                 best_match_list.append(source_doc[i:n])
                 best_ratio_list.append(stringsim)
+                if break_when_threshold:
+                    break
             i += 1
             n += 1
 
@@ -231,7 +234,7 @@ class ExtractionValidator:
         """
         
         if dst_doc in source_doc: return True
-        match_df = self.find_similiar_sequence(dst_doc, source_doc, threshold)
+        match_df = self.find_similiar_sequence(dst_doc, source_doc, threshold, break_when_threshold=True)
         if len(match_df) > 0:
             return True
         else:
@@ -269,7 +272,7 @@ if __name__ == "__main__":
     print(result)
     #In case you want to just check one text        
     validator = ExtractionValidator(dst_doc=None, source_doc=None, threshold=None)
-    result2 = validator.find_similiar_sequence(dst_doc=dat_joined.text[0], source_doc=dat_joined.plainpagefulltext[0], threshold=0.98)
+    result2 = validator.find_similiar_sequence(dst_doc=dat_joined.text[0], source_doc=dat_joined.plainpagefulltext[0], threshold=0.98, break_when_threshold=False)
     result2
 
     
