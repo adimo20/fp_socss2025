@@ -152,7 +152,8 @@ print(result2)
 1. Code-Review - Remove code that is not 100% nessecary.
 2. Test-LLM as a Judge - combined with fewshot finetuning.
 3. Collect and evaluate data that has run through the whole process.
-4. Prompt-Engeneering - using a Second-LLM for generating prompts, to cut out human bias in prompt generation. 
+4. Prompt-Engeneering - using a Second-LLM for generating prompts, to cut out human bias in prompt generation.
+5. Schedule a meeting with expert - (e.g. Nicole Schwitter - see literatur below) - to gain expert knowledge on what to report and how to present results from our research - (maybe also regarding a possible publication)
 
 # Literatur
 Folgende Literatur könnte im Kontext dieses Repos interessant sein:
