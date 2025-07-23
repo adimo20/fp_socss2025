@@ -43,7 +43,7 @@ df = zp_pages(
 -  `place_of_distribution` - definiert den Veröffentlichungsort der durchsucht werden soll
 -  `plainpagefulltext` - definiert den Suchbegriff der für eine Volltextsuche Verwendet werden soll <br>
 
-Da wir eine Art Rate-Limit-Fehler bekommen, wenn wir keinen Ort bei der API-Abfrage angeben, müssen wir durch die möglichen Orte loopen (die Möglichkeiten findet man auf der Webiste der DDB, wenn man einen Suchbegroff eingibt), sodass wir für jeden Ort eine eigene Anfrage stellen - das löst den Rate-Limit-Fehler.
+Da wir eine Art Rate-Limit-Fehler bekommen, wenn wir keinen Ort bei der API-Abfrage angeben, müssen wir durch die möglichen Orte loopen, die im oberen code in einer Liste `place` gespeichert sind (die Möglichkeiten findet man auf der Webiste der DDB, wenn man einen Suchbegroff eingibt), sodass wir für jeden Ort eine eigene Anfrage stellen - das löst den Rate-Limit-Fehler. Unter `plainpagefulltext=["Heiratsgesuch"]` - könnten wir andere Suchbegriffe einsetzen wie beispielsweise "zwecks heirat" oder ähnliches. 
 
 
 # informationExtractor
@@ -52,7 +52,7 @@ Das aktuelle Skript `information_extractor_lib` implementiert die Klasse `Inform
 - `df` - pandas dataframe der die von der ddbapi entnommenen daten enthält
 - `page_id_colname` - Spaltename im Dataframe in dem die Page-Ids enthalten sind
 - `text_colname` - Spaltenname im Dataframe in dem die Volltexte gespeichert sind.
-- `output_path` - Pfad an dem die Ergebnisse der Informationsextraktion gespeichert werden sollen. Im Falle, dass bereits einmal Ergebnisse zwischengespeichert wurden von dieser Klasse - muss kein neuer Pfad angegeben werden. Die Klasse konkatiniert die alten Ergebnisse mit den neuen Ergebnissen (Sofern diese die gleichen Spaltennamen haben).
+- `output_path` - Pfad an dem die Ergebnisse der Informationsextraktion gespeichert werden sollen. Im Falle, dass bereits einmal Ergebnisse zwischengespeichert wurden von dieser Klasse - muss kein neuer Pfad angegeben werden. Die Klasse konkatiniert die alten Ergebnisse mit den neuen Ergebnissen (Sofern diese die gleichen Spaltennamen haben), kann aber auch fürs erste als None gesetzt werden, wenn wir unserer Daten nicht direkt speichern wollen.
 
 Um nun den Task der Informationsextraction zu performen werden verschiedene Funktionen der Klasse `information_extractor` implementiert:
 1. `set_config` - setzt den API Key.
@@ -67,7 +67,8 @@ Um nun den Task der Informationsextraction zu performen werden verschiedene Funk
 10. `information_extraction_flow` Die Funktion information_extraction_flow performt diesen Prozess.
 
 ## Anwendung der Klasse
-Wenn der config_file im richtigen Format vorliegt und die Daten der ddbapi im Arbeitsverzeichnis vorliegen können wir die Klasse wie folgt anweden:
+Wenn der config_file im richtigen Format vorliegt und die Daten der ddbapi im Arbeitsverzeichnis vorliegen können wir die Klasse wie folgt anweden. Die Klasse ist generisch implementiert. Das heißt wir können mehr als einen task mit ihr ausführen. Sie ist so optimiert, dass wir Informationsextraktion, OCR-Korrektur und Word-Completion mit ihr durchführen können - Für ein Beispiel wie die Klasse für alle drei Tasks verwendet wird - siehe `execute_fullworkflow.ipynb`. 
+
 ```py
 
 from scripts.information_extractor_lib import InformationExtractor
@@ -82,6 +83,26 @@ print(ergebnis_df)
 
 
 ```
+
+Der init der Klasse enthält folgendes: 
+
+- `configs` - load the config file that is per default loaded. In there is the prompt and the model to use saved.
+- `model_name:str` - if the model in the config needs to changed it can via this attribute. In case this attribute is set the model defined by this name will be used, instead of the one in the config
+- `prompt:str` -  if the prompt in the config needs to changed it can via this attribute. In case this attribute is set the prompt defined by this name will be used, instead of the one in the config
+- `model:str` - model api is stored here
+- `page_ids:list` - list to store the ids of each text entry
+-  `input_texts:list` - list to store the original texts that should be processed by the model
+- `df:pd.DataFrame` - data-frame from which the page ids and the input-texts are extracted but if I think a little bit - <b> this could be changed - so i don't give the colnames for the text and the ids and the df - instead directly giving the desired inputs as a list. </b>
+- `model_input` - prompt and text are concatinated here
+- `page_id_colname:str` - colname of pageids in df
+- `text_colname:str` - colname of texts in df
+- `output_filename:str` - filename for potential output
+- `sleeping_time:int` = 4 -  This is critical - because if the model responds to fast too often then this will result in ratelimit errors. 
+- `safe_results_external:bool` - determines if output should be directly written - by default false
+- `generation_config` - model config generation - critical for reproduction of the results
+- `verbose:bool` - if true prints out the extracted contet 
+- `save_one_result_per_row:bool` - determines if multiple examples are extracted per one input. So that we need to save more than one result per input 
+
 ### Config
 
 Wichtig der Api Key in dieser Art dem Implementierung wird als Umgebungsvariable geladen - hier wird es zu `FEHLERN` kommen. Erkläre ich in der Sitzung 
@@ -104,7 +125,7 @@ configs = {
 
 # Validatition
 
-Um die Accuracy der entnommenen Informationen anzuwenden wird die Klasse `ExtractionValidator` implementiert. Diese erhält den extrahierten Text `dst_doc` und das original Dokument aus dem die Informationen entnommen wurden `source_doc`, sowie einen Threshold als Input. Mit der Funktion `calculate_extraction_accuracy`  wird überprüft ob die entnomme Textpassage 1:1 im original Dokument zu finden ist. Falls das nicht der Fall ist wird überprüft ob es eine Textpassage in original Dokument die anhand der Levensteindistance approximativ die gleiche ist. Es kann immer passieren, dass das LLM ein Leerzeichen, Komma etc. ergänzt oder weglässt. Daher sollten sich im original Dokument Passagen finden die eine Levenstein Similiarity von ~0.98 haben. Ist dieser Fall gegeben, sollte der String im Sinn und der synatktischen Struktur der gleiche sein.  `calculate_extraction_accuracy`  returnt die Accuracy der Infromations extraction als tuple: 
+Um die Accuracy der entnommenen Informationen anzuwenden wird die Klasse `ExtractionValidator` implementiert. Diese erhält den extrahierten Text `dst_doc` und das original Dokument aus dem die Informationen entnommen wurden `source_doc`, sowie einen Threshold als Input. Mit der Funktion `calculate_extraction_accuracy`  wird überprüft ob die entnomme Textpassage 1:1 im original Dokument zu finden ist. Falls das nicht der Fall ist wird überprüft ob es eine Textpassage in original Dokument die anhand der Levensteindistance approximativ die gleiche ist. Es kann immer passieren, dass das LLM ein Leerzeichen, Komma etc. ergänzt oder weglässt. Daher sollten sich im original Dokument Passagen finden die eine Levenstein Similiarity von ~0.98 haben. Ist dieser Fall gegeben, sollte der String im Sinn und der synatktischen Struktur der gleiche sein.  `calculate_extraction_accuracy`  returnt die Accuracy der Infromations extraction als tuple. Zur weiteren Veranschaulichung siehe `extraction_quality_control.ipynb`  
 <br>
 
 ![image](https://github.com/user-attachments/assets/38a9eb22-a113-44c1-8937-25ae8435752c)
@@ -124,7 +145,12 @@ result2 = validator.find_similiar_sequence(dst_doc=dat_joined.text[0], source_do
 print(result2)
 
 ```
+# Task für WiSe 25/26
 
+1. Code-Review - Remove code that is not 100% nessecary.
+2. Test-LLM as a Judge - combined with fewshot finetuning.
+3. Collect and evaluate data that has run through the whole process.
+4. Prompt-Engeneering - using a Second-LLM for generating prompts, to cut out human bias in prompt generation. 
 
 # Literatur
 Folgende Literatur könnte im Kontext dieses Repos interessant sein:
@@ -135,8 +161,3 @@ Folgende Literatur könnte im Kontext dieses Repos interessant sein:
 
 ![image](https://github.com/user-attachments/assets/5490c3b3-43ee-450d-9a4f-29a5d12b421c)
 
-
-# Flowchart der InformationExtractor Klasse
-
-
-[![](https://mermaid.ink/img/pako:eNp9VGtT2zgU_Ssa7ez0S6CBJBA8bXfybqCERygFHMYjrOtEU1vKyDKEBv776uXEaWc3H5JI99zHOffqrnEsKOAAJ6l4iRdEKnTTn3GkP51wqvQ5QGOeCJkRxQQfrJQksRJyP4oYZyqKHtHe3hfUDcf6xEjKfgEiSkn2VCjIg09P8uOXPZTpHGnESQY1tJQiWypvoIm-IHOIGI1ikTqEgpUqTx4nCrUsVJSwFMzto6vQfXdtBb0QXG0RJYpEqRBLFJM0BerBPQvrh6kglPF5ZAgjWEGsC6U7AfsWOQhzMGXwhM0dj579X0hAncsxOoNX7zWw-KGNHFmqHi-BKEAj4CC1es9wbmzeaWidRs7JlOx8vMBWgxwRTkt5cpRo4VBfI4fydwlGNtjXahMk5EWqUMpy5aFfLWjsuoqMQAFi6DOqIyVQRlYR34k5tvDTjay5Fi2FyJSzK-ypBZ6FsaXrBNDDoftVypY9MQ6-8eiFqQWyZkvSBzmzQb6FXiydQnAFXKHC5EWdsZshj_5m0efhJZE5oNPpxcTwXQqe7-pybnGTMF5A_NNX5kZpl8LE4i7WusOKMJ6Xov_z7uwXxv42EW_oMuzQTU-McC7cYxV3D_kbutoG81TKYJc22ZU7XG0iX9vIFBJi-uZ9nIIfJkItjAyJKPREMI4WIOHDYzWETToNLxw7lqNnPQclv2ubclqVZmqvbmxSPyuazZ9Tc2Nx38NpCrBERygHXRrNvfW7td6uGfobtdBnPUwly9ttVT_K0dBaRTTx0jtqU_IMmpACmQFlpvGuhDLB7Uafu9AIynhRtviHzX0f2hCbd2FY9Ka3HnNvMXdV4nf26kGX_MlNfVnxw7bicfXGJO90_ofDkHGSmvGOITfTujOCnY5bkN21b43ZYXrvaIXzMnO3u03d64XXQKhDmJ5vyXiYqaffD_124fDyx1LouV03GITl27OPzkDNpvGovttzw6FOqArJdWWGx-_BBn69Daushn59jcIBpwHyAbwEQP9jTeXqVXPvGAnS4C84SFoJVC2jkTfFbTiKT6qmvrckSdKAetVyWlpiaEJctUxKSwNaSWunhE0N7aQFbVzDc8koDpQsoIYzPYzEHPHaOM2wWkAGMxzov5TInzM84-_aZ0n4gxBZ6SZFMV_gICFprk_FUksNfUbmWobNrQROQfb0M1Y4ODy2MXCwxiscNJr7J43jZrvZbBzXm_VGs4ZfcdBs7rcP2kcnh-324UFD_7zX8C-btL7fPm69_wuu_nJC?type=png)](https://mermaid.live/edit#pako:eNp9VGtT2zgU_Ssa7ez0S6CBJBA8bXfybqCERygFHMYjrOtEU1vKyDKEBv776uXEaWc3H5JI99zHOffqrnEsKOAAJ6l4iRdEKnTTn3GkP51wqvQ5QGOeCJkRxQQfrJQksRJyP4oYZyqKHtHe3hfUDcf6xEjKfgEiSkn2VCjIg09P8uOXPZTpHGnESQY1tJQiWypvoIm-IHOIGI1ikTqEgpUqTx4nCrUsVJSwFMzto6vQfXdtBb0QXG0RJYpEqRBLFJM0BerBPQvrh6kglPF5ZAgjWEGsC6U7AfsWOQhzMGXwhM0dj579X0hAncsxOoNX7zWw-KGNHFmqHi-BKEAj4CC1es9wbmzeaWidRs7JlOx8vMBWgxwRTkt5cpRo4VBfI4fydwlGNtjXahMk5EWqUMpy5aFfLWjsuoqMQAFi6DOqIyVQRlYR34k5tvDTjay5Fi2FyJSzK-ypBZ6FsaXrBNDDoftVypY9MQ6-8eiFqQWyZkvSBzmzQb6FXiydQnAFXKHC5EWdsZshj_5m0efhJZE5oNPpxcTwXQqe7-pybnGTMF5A_NNX5kZpl8LE4i7WusOKMJ6Xov_z7uwXxv42EW_oMuzQTU-McC7cYxV3D_kbutoG81TKYJc22ZU7XG0iX9vIFBJi-uZ9nIIfJkItjAyJKPREMI4WIOHDYzWETToNLxw7lqNnPQclv2ubclqVZmqvbmxSPyuazZ9Tc2Nx38NpCrBERygHXRrNvfW7td6uGfobtdBnPUwly9ttVT_K0dBaRTTx0jtqU_IMmpACmQFlpvGuhDLB7Uafu9AIynhRtviHzX0f2hCbd2FY9Ka3HnNvMXdV4nf26kGX_MlNfVnxw7bicfXGJO90_ofDkHGSmvGOITfTujOCnY5bkN21b43ZYXrvaIXzMnO3u03d64XXQKhDmJ5vyXiYqaffD_124fDyx1LouV03GITl27OPzkDNpvGovttzw6FOqArJdWWGx-_BBn69Daushn59jcIBpwHyAbwEQP9jTeXqVXPvGAnS4C84SFoJVC2jkTfFbTiKT6qmvrckSdKAetVyWlpiaEJctUxKSwNaSWunhE0N7aQFbVzDc8koDpQsoIYzPYzEHPHaOM2wWkAGMxzov5TInzM84-_aZ0n4gxBZ6SZFMV_gICFprk_FUksNfUbmWobNrQROQfb0M1Y4ODy2MXCwxiscNJr7J43jZrvZbBzXm_VGs4ZfcdBs7rcP2kcnh-324UFD_7zX8C-btL7fPm69_wuu_nJC)
