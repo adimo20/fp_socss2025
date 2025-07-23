@@ -7,7 +7,6 @@
 - [Validation](#Validation)
 - [Literatur](#Literatur)
 - [Sample](#Sample)
-- [Flowchart der InformationExtractor Klasse](#Flowchart)
 
 # Anmerkungen - Ideen für erweiterte Forschungsfrage
 Aufgreifen von LLM as a Judge - zunächst kleines Sample an annotierten Beispielen ergänzen und dann ein Few-Shot learning durchführen. Finetuning der Anworten des Modells auf Basis von annotierten Daten. 
