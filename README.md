@@ -25,8 +25,7 @@ Diese Schlagwortsuche kann nicht nur auf der Website durchgeführt werden, sonde
 
 # konzept 
 
-![Flowchart (1)](https://github.com/user-attachments/assets/648587df-31a5-4615-8e21-cce8b77bb24e)
-
+![Flowchart (4)](https://github.com/user-attachments/assets/7dbca971-e8fa-430c-b2bd-02f7c238a417)
 
 
 # get_data_from_ddbapi
@@ -47,6 +46,10 @@ Da wir eine Art Rate-Limit-Fehler bekommen, wenn wir keinen Ort bei der API-Abfr
 
 
 # informationExtractor
+
+![Flowchart (5)](https://github.com/user-attachments/assets/4a6a1b28-022a-4e97-a709-8caa0f81709b)
+
+
 Nachdem die Daten über die API importiert worden sind müssen wir sie jetzt für uns nutzbar machen. Die Texte die wir erhalten haben sind die Volltexte, der Seiten in denen ein Match mit dem Suchwort "Heiratsgesuch" gefunden wurde. Um nun die konkreten Kontaktanzeigen aus diesen Volltexten zu entnehmen verwenden wir die GeminiAPI. An diese senden wir den Volltext und geben explizite Anweisungen wie und welchen Text sie aus dem Volltext extrahieren soll. So erhalten nur die relevanten Stellen aus dem Dokument. 
 Das aktuelle Skript `information_extractor_lib` implementiert die Klasse `InformationExtractor`. Diese Klasse bekommt as Input drei Werte:
 - `df` - pandas dataframe der die von der ddbapi entnommenen daten enthält
