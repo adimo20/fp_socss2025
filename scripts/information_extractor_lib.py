@@ -10,6 +10,21 @@ from datetime import datetime
 import sys
 import io
 from rapidfuzz import fuzz
+import re 
+
+def preprocess_raw_text(text:str)->str:
+    """Every character that in not a alpha-numeric letter or element of the list ['.', '-', ','] will be removed. Also all duplicated spaces will be replaced by just one space.
+    Parameters: 
+    Raw Text
+
+    Returns:
+    cleaned text
+    """
+    pattern = [r"[^\w|\s|\.|-|\,]", "\s+"]
+    for p in pattern:
+        text = re.sub(p, " ", text)
+    text = text.strip()
+    return text 
 
 
 if hasattr(sys.stdout, 'buffer'):
