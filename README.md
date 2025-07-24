@@ -24,7 +24,7 @@ Diese Schlagwortsuche kann nicht nur auf der Website durchgeführt werden, sonde
 
 # konzept 
 
-![Flowchart (4)](https://github.com/user-attachments/assets/7dbca971-e8fa-430c-b2bd-02f7c238a417)
+![Flowchart (6)](https://github.com/user-attachments/assets/77cfd169-776a-45e9-a2ac-12d2ed723ed3)
 
 
 # get_data_from_ddbapi
