@@ -11,6 +11,8 @@
 # Anmerkungen - Ideen für erweiterte Forschungsfrage
 Aufgreifen von LLM as a Judge - zunächst kleines Sample an annotierten Beispielen ergänzen und dann ein Few-Shot learning durchführen. Finetuning der Anworten des Modells auf Basis von annotierten Daten. 
 
+- Important add error logging - need to know why the error occoured - was it a rate limit or an other error. 
+
 
 # deutsches_zeitungs_portal
 
