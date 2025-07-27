@@ -57,7 +57,7 @@ class DataManager:
 
 
 class InformationExtractor:
-    def __init__(self, df:pd.DataFrame,page_id_colname:str, text_colname:str, output_filename:str):
+    def __init__(self, df:pd.DataFrame,page_id_colname:str, text_colname:str, output_filename:str=None):
         self.configs = configs
         #Das hier könnte zu problemen führen
         self.model_name:str = None
@@ -187,8 +187,13 @@ class InformationExtractor:
         
         res_list_df = self.create_out_df(res_list)
         #Important content of text needs to be a list otherwise this wont work - this is wrong literally safes one resut per row or am i wrong
-        if self.save_one_result_per_row and isinstance(res_list_df.text[0], list): 
-            res_list_df["text"] = res_list_df.text.apply(lambda l: l[0])
+        if self.save_one_result_per_row and not res_list_df.empty and isinstance(res_list_df.text[0], list): 
+            #filter text == [] split an dieser stelle und danach concat.
+            res_list_df = pd.concat([
+                res_list_df[res_list_df.text.apply(lambda s: s == [])].reset_index(drop=True),
+                res_list_df[res_list_df.text.apply(lambda s: s != [])].explode('text').reset_index(drop=True)
+            ])
+            
         #Final output will then be timestamped
         if self.safe_results_external:
             self.reduce_future_input(input_df=self.df, output_df=res_list_df)
