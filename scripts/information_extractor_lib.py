@@ -11,6 +11,14 @@ import sys
 import io
 from rapidfuzz import fuzz
 import re 
+import nltk
+
+def is_sentence(sent, threshold):
+    if sent == []:
+        return False
+    
+    return len(nltk.word_tokenize(sent)) > threshold
+
 
 def preprocess_raw_text(text:str)->str:
     """Every character that in not a alpha-numeric letter or element of the list ['.', '-', ','] will be removed. Also all duplicated spaces will be replaced by just one space.
@@ -20,7 +28,7 @@ def preprocess_raw_text(text:str)->str:
     Returns:
     cleaned text
     """
-    pattern = [r"[^\w|\s|\.|-|\,]", "\s+"]
+    pattern = [r"[^\w|\s|\.|-|\,]", r"\s+"]
     for p in pattern:
         text = re.sub(p, " ", text)
     text = text.strip()
@@ -132,21 +140,33 @@ class InformationExtractor:
         """
         try:
             input_combined = self.create_model_input(page_id=page_id, input_text=input_text)
-            response = self.model.generate_content([input_combined])
-            res_parsed = json.loads(response.text)
             
+        except Exception as e:
+            print(f"Error while generating the model input: {e}")
+            return {"content":f"Error while generating the model input: {e}"}
+        
+        try:
+            response = self.model.generate_content([input_combined])
+        except Exception as e:
+            print(f"Error while receiving the response: {e} ")
+            return {"content":f"Error while receiving the response: {e} "}
+        
+        try:
+            res_parsed = json.loads(str(response.text))
+
             return res_parsed
-        except:
-            return {"content":"Error while reading the response - try this page_id later"}
-    
+        except Exception as e: 
+            print(f"Error while parsing the response - Exeption {e}")
+            return {"content":f"Error while parsing the response - Exeption {e}"}
+                
+        
     def create_out_df(self, r:list[dict]) -> pd.DataFrame:
         """Funktion die aus dem Model output einen Dataframe produziert"""
-        page_id_list = [c["page_id"] for c in r]
-        text_list = [c["content"] for c in r]
-        time = get_time_str()
-        time_list = [time] * len(page_id_list)
-
-        new_df = pd.DataFrame(data={"page_id":page_id_list, "text":text_list, "time":time_list})
+        page_id_list = [c["page_id"] if c is not None and "page_id" in c and c["page_id"] is not None else None for c in r]
+        text_list = [c["content"] if c is not None and "content" in c and c["content"] is not None else None for c in r]
+        time_str = get_time_str()
+        
+        new_df = pd.DataFrame(data={"page_id":page_id_list, "text":text_list, "time":time_str})
         return new_df
     
     def check_model_output(self, model_output:dict, i:int) -> dict:
@@ -176,7 +196,6 @@ class InformationExtractor:
         for i in range(0, max_n):
             res_temp = self.extract_single_page(self.page_ids[i], self.input_texts[i])
             res_temp = self.check_model_output(model_output=res_temp, i=i)
-            res_temp.update({"page_id":self.page_ids[i]})
             res_list.append(res_temp)
             if self.verbose: print(res_temp)
             sleep(self.sleeping_time)
