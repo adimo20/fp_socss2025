@@ -13,6 +13,9 @@ Aufgreifen von LLM as a Judge - zunächst kleines Sample an annotierten Beispiel
 
 - Important add error logging - need to know why the error occoured - was it a rate limit or an other error. 
 
+# Ergänzungen 
+ 
+- Zu dem eigentlichen Prompt sollten wir noch einen System-Prompt Ergänzen, der die Rahmenbedingungen des Models/Agenten festlegt (vgl. Schuler et al. 2025: 15)
 
 # deutsches_zeitungs_portal
 
