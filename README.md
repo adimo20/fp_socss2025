@@ -18,6 +18,12 @@ Aufgreifen von LLM as a Judge - zunächst kleines Sample an annotierten Beispiel
 - Zu dem eigentlichen Prompt sollten wir noch einen System-Prompt Ergänzen, der die Rahmenbedingungen des Models/Agenten festlegt (vgl. Schuler et al. 2025: 15)
 - Automatic Prompt Engineering (APE) so wie im Papaer von  Zhou et al. vorgeschlagen und <a href = "https://github.com/keirp/automatic_prompt_engineer">hier</a> in den Code integrieren. 
 
+- Produktionsample ziehen - Geschichtete Zufallsstichprobe. Analyse machen, welche Daten wir haben.
+- Weitere Begriffe bei Sampling ergänzen: zwecks heirat, zwecksheirat.
+- Sampling über Regionen und Zeit schichten. Analyse.
+- Exportiere Anzeigen zur Annotation nutzbar machen! - Nach opensource Annotationstools suchen!
+- OCR-Korrektur vor der Informationsextraktion und dem händischen Labeln!
+
 # deutsches_zeitungs_portal
 
 Das deutsche Zeitungsportal bietet auf seiner <a href = "https://github.com/Deutsche-Digitale-Bibliothek/ddblabs-ddbapi">Internetseite</a> die Möglichkeit eine sehr große Anzahl von historischen Zeitungen zu betrachten. Dabei lässt sich auch eine Schlagwortsuche durchführen. Sucht man nach dem Begriff Heiratsgesuch findet man auf ungefähr 21000 Zeitungsseiten ein Match. 
