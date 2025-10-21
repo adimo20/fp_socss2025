@@ -4,9 +4,9 @@
 - [Konzept](#konzept)
 - [get_data_from_ddbapi](#get_data_from_ddbapi)
 - [informationExtractor](#informationExtractor)
-- [Validation](#Validation)
-- [Literatur](#Literatur)
-- [Sample](#Sample)
+- [Validation](#validation)
+- [Literatur](#literatur)
+- [Sample](#sample)
 
 # Anmerkungen - Ideen für erweiterte Forschungsfrage
 Aufgreifen von LLM as a Judge - zunächst kleines Sample an annotierten Beispielen ergänzen und dann ein Few-Shot learning durchführen. Finetuning der Anworten des Modells auf Basis von annotierten Daten. 
@@ -16,6 +16,7 @@ Aufgreifen von LLM as a Judge - zunächst kleines Sample an annotierten Beispiel
 # Ergänzungen 
  
 - Zu dem eigentlichen Prompt sollten wir noch einen System-Prompt Ergänzen, der die Rahmenbedingungen des Models/Agenten festlegt (vgl. Schuler et al. 2025: 15)
+- Automatic Prompt Engineering (APE) so wie im Papaer von  Zhou et al. vorgeschlagen und <a href = "https://github.com/keirp/automatic_prompt_engineer">hier</a> in den Code integrieren. 
 
 # deutsches_zeitungs_portal
 
