@@ -23,6 +23,8 @@ Aufgreifen von LLM as a Judge - zunächst kleines Sample an annotierten Beispiel
 - Sampling über Regionen und Zeit schichten. Analyse.
 - Exportiere Anzeigen zur Annotation nutzbar machen! - Nach opensource Annotationstools suchen!
 - OCR-Korrektur vor der Informationsextraktion und dem händischen Labeln!
+- Labeln der ersten Anzeigen!
+- Erste Erfolgsmetriken mitbringen!
 
 # deutsches_zeitungs_portal
 
