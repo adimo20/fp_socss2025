@@ -25,6 +25,7 @@ Aufgreifen von LLM as a Judge - zunächst kleines Sample an annotierten Beispiel
 - OCR-Korrektur vor der Informationsextraktion und dem händischen Labeln!
 - Labeln der ersten Anzeigen!
 - Erste Erfolgsmetriken mitbringen!
+- Ersten Codebuch eintrag was ist eine Hereitsanzeige! - Corner Cases die unsicher sind. 
 
 # deutsches_zeitungs_portal
 
